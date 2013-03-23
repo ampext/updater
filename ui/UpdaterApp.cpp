@@ -1,7 +1,6 @@
 #include "UpdaterApp.h"
 #include "UpdateDlg.h"
 #include "DownloadDlg.h"
-#include "TextResourceHandler.h"
 
 #include <wx/msgdlg.h> 
 #include <wx/xrc/xmlres.h>
