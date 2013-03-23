@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<resource xmlns="http://www.wxwidgets.org/wxxrc" version="2.3.0.1">
+	<object class="wxBitmap" name="tray">../images/tray.png</object>
+	<object class="wxBitmap" name="green_check">../images/green_check.png</object>
+	<object class="wxBitmap" name="red_cross">../images/red_cross.png</object>
+	<object class="wxBitmap" name="gray_cross">../images/gray_cross.png</object>
+</resource>

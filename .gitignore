@@ -1,0 +1,6 @@
+utils/build
+utils/dist
+build*
+*sublime*
+*.bat
+*.exe
