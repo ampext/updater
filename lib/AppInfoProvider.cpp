@@ -151,6 +151,14 @@ void TargetAppProvider::Reset()
 	{
 		wxLogError(L"Can not find '%s' property for application", e.GetDescription());
 	}	
+
+	wxFileName instFileName(installDir);
+	
+	if(instFileName.Normalize(wxPATH_NORM_ENV_VARS)) installDir = instFileName.GetFullPath();
+	else
+	{
+		wxLogWarning(L"Can not normalize app installation path '%s'", installDir);
+	}
 }
 
 wxString TargetAppProvider::GetName() const
