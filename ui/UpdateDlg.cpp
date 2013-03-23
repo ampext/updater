@@ -287,12 +287,13 @@ void UpdateDlg::CheckUpdates()
 void UpdateDlg::SetupTimer()
 {
 	timer = new wxTimer(this);
-	timer->Bind(wxEVT_TIMER, &UpdateDlg::OnUpdateTimer, this);
+	//timer->Bind(wxEVT_TIMER, &UpdateDlg::OnUpdateTimer, this);
+	Connect(timer->GetId(), wxEVT_TIMER, wxTimerEventHandler(UpdateDlg::OnUpdateTimer));
 }
 
 void UpdateDlg::RestartTimer(unsigned int hours)
 {
-	timer->Start(3600 * hours);
+	timer->Start(1000 * 3600 * hours);
 	timerStartTime = wxDateTime::Now();
 
 	//wxLogMessage("Timer restarted to %d seconds", 3600 * hours);
