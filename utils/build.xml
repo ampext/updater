@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="make_pkg" default="default" basedir=".">
+
+    <property name="src.dir" value="src"/>
+    <property name="build.dir" value="build"/>
+    <property name="classes.dir" value="${build.dir}/classes"/>
+    <property name="jar.dir" value="dist"/>
+
+    <property name="commons.cli.jar" value="commons-cli-1.2.jar"/>
+    <property name="commons.cli.path" value="d:\lib\java\commons-cli\${commons.cli.jar}" />
+
+    <target name="default" depends="compile,jar" />
+
+    <target name="clean">
+        <delete dir="${build}"/>
+    </target>
+
+    <target name="compile">
+        <mkdir dir="${classes.dir}"/>
+        <javac srcdir="${src.dir}" destdir="${classes.dir}" classpath="${commons.cli.path}"/>
+    </target>
+
+    <target name="jar">
+        <jar destfile="${jar.dir}/make_pkg.jar" basedir="${classes.dir}">
+            <manifest>
+                <attribute name="Main-Class" value="PackageMaker" />
+                <attribute name="Class-Path" value="${commons.cli.jar}"/>
+            </manifest>
+        </jar>
+    </target>
+</project>

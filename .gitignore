@@ -1,6 +1,8 @@
 utils/build
 utils/dist
-build*
+build
+build_release
+build_number
 *sublime*
 *.bat
 *.exe
