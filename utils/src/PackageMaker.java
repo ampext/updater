@@ -106,7 +106,7 @@ public class PackageMaker
 		return true;
 	}
 
-	public static boolean makeArchive(String dst_path, String src_dir) throws FileNotFoundException, IOException
+	public static boolean makeArchive(String dst_path, String src_path) throws FileNotFoundException, IOException
 	{
 		FileOutputStream fileStream = new FileOutputStream(dst_path);
 		boolean result = true;
@@ -114,15 +114,35 @@ public class PackageMaker
 		try(ZipOutputStream zipStream = new ZipOutputStream(fileStream))
 		{
 			Stack<File> files = new Stack<>();
-			listFiles(new File(src_dir), files);
-			
-			Path src_path = Paths.get(src_dir);
-				
+
+			File root = new File(src_path);
+			Path root_path;
+
+			if(!root.exists())
+			{
+				System.out.println("Nothing to package");
+				return false;
+			}
+			else 
+			{
+				if(root.isFile())
+				{
+					files.push(root);
+					root_path = Paths.get(root.getParent()).toAbsolutePath();
+				}
+				else if(root.isDirectory())
+				{
+					listFiles(root, files);
+					root_path = Paths.get(src_path).toAbsolutePath();
+				}
+				else return false;
+			}
+
 			while(!files.empty())
 			{
 				File file = files.pop();
-				Path rel_path = src_path.relativize(Paths.get(file.getAbsolutePath()));
-				
+				Path rel_path = root_path.relativize(Paths.get(file.getAbsolutePath()));
+		
 				if(file.isFile())				
 				{
 					System.out.print("Compressing " + rel_path + "... ");
