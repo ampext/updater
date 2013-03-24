@@ -99,25 +99,49 @@ wxWindow *UpdateDlg::CreateSettingsPage(wxWindow *parent)
 	wxBoxSizer *sizer = new wxBoxSizer(wxVERTICAL);
 
 	sizer->Add(hideCheck = new wxCheckBox(panel, wxID_ANY, L"Hide program to tray after start"), 0, wxALL | wxEXPAND, 5);
+	sizer->Add(notifyCheck = new wxCheckBox(panel, wxID_ANY, L"Notify"), 0, wxALL | wxEXPAND, 5);
 	sizer->Add(startCheck = new wxCheckBox(panel, wxID_ANY, L"Check for updates after start"), 0, wxALL | wxEXPAND, 5);
 	sizer->Add(autoCheck = new wxCheckBox(panel, wxID_ANY, L"Check for updates automatically"), 0, wxALL | wxEXPAND, 5);
 
-	autoCheck->Bind(wxEVT_COMMAND_CHECKBOX_CLICKED, &UpdateDlg::OnAutoCheckUpdates, this);
-
-	wxStaticBoxSizer *subSizer = new wxStaticBoxSizer(wxHORIZONTAL, panel, L"Updates settings");
+	wxStaticBoxSizer *acSizer = new wxStaticBoxSizer(wxHORIZONTAL, panel, L"Updates settings");
+	wxStaticBox *updStaticBox = acSizer->GetStaticBox();
 	{
-		updStaticBox = subSizer->GetStaticBox();
-
-		subSizer->Add(new wxStaticText(updStaticBox, wxID_ANY, L"Check for updates every"), 0, wxLEFT | wxALIGN_CENTER_VERTICAL, 5);
-		subSizer->Add(updSpin = new wxSpinCtrl(updStaticBox, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 24), 0, wxALL | wxEXPAND, 5);
-		subSizer->Add(new wxStaticText(updStaticBox, wxID_ANY, L"hour(s)"), 0, wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
+		acSizer->Add(new wxStaticText(updStaticBox, wxID_ANY, L"Check for updates every"), 0, wxLEFT | wxALIGN_CENTER_VERTICAL, 5);
+		acSizer->Add(updSpin = new wxSpinCtrl(updStaticBox, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 24), 0, wxALL | wxEXPAND, 5);
+		acSizer->Add(new wxStaticText(updStaticBox, wxID_ANY, L"hour(s)"), 0, wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
 	}
 
-	Connect(wxID_ANY, wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(UpdateDlg::OnSettingsCheckBox));
-	Connect(wxID_ANY, wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler(UpdateDlg::OnSpinCtrl));
+	wxCheckBox *targetCheck = autoCheck;
 
+	autoCheck->Bind(wxEVT_COMMAND_CHECKBOX_CLICKED, [targetCheck, updStaticBox](wxCommandEvent &event)
+	{
+		updStaticBox->Enable(targetCheck->IsChecked());
+		event.Skip();
+	});
+
+	sizer->Add(acSizer, 0, wxALL | wxEXPAND, 5);
+
+	wxBoxSizer *subSizer = new wxBoxSizer(wxHORIZONTAL);
+	{
+		wxWindow *label;
+		wxWindow *spin;
+
+		subSizer->Add(targetCheck = atCheck = new wxCheckBox(panel, wxID_ANY, L"Automatically terminate target application after"), 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+		subSizer->Add(spin = atSpin = new wxSpinCtrl(panel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 120), 0, wxALL | wxEXPAND, 5);
+		subSizer->Add(label = new wxStaticText(panel, wxID_ANY, L"second(s)"), 0, wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
+
+		atCheck->Bind(wxEVT_COMMAND_CHECKBOX_CLICKED, [targetCheck, label, spin] (wxCommandEvent &event)
+		{
+			spin->Enable(targetCheck->IsChecked());
+			label->Enable(targetCheck->IsChecked());
+			event.Skip();
+		});
+	}
 	sizer->Add(subSizer, 0, wxALL | wxEXPAND, 5);
-	sizer->Add(notifyCheck = new wxCheckBox(panel, wxID_ANY, L"Notify"), 0, wxALL | wxEXPAND, 5);
+
+	Connect(wxID_ANY, wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(UpdateDlg::OnSettingsCheckBox));
+	Connect(wxID_ANY, wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler(UpdateDlg::OnSettingsSpinCtrl));
+	Connect(wxID_ANY, wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler(UpdateDlg::OnSettingsText));
 
 	panel->SetSizerAndFit(sizer);
 
@@ -162,7 +186,9 @@ void UpdateDlg::OnApply(wxCommandEvent& event)
 	updateParams.hideAfterStart = hideCheck->GetValue();
 	updateParams.checkUpdatesAfterStart = startCheck->GetValue();
 	updateParams.autoCheckUpdates = autoCheck->GetValue();
-	updateParams.autoCheckInterval = updSpin->GetValue();	
+	updateParams.autoCheckInterval = updSpin->GetValue();
+	updateParams.autoTerminateApp = atCheck->GetValue();
+	updateParams.autoTerminateAppInterval = atSpin->GetValue();
 
 	EnableApplyButton(false);
 }
@@ -353,22 +379,28 @@ void UpdateDlg::OnSettingsCheckBox(wxCommandEvent &event)
 {
 	int id = event.GetId();
 
-	if(id == hideCheck->GetId() || id == autoCheck->GetId() || id == notifyCheck->GetId() || id == startCheck->GetId())
+	if(id == hideCheck->GetId() || id == autoCheck->GetId() || id == notifyCheck->GetId() || id == startCheck->GetId() || id == atCheck->GetId())
 		EnableApplyButton(TestUpdateSettingsForChanges());
 
 	event.Skip();
 }
 
-void UpdateDlg::OnSpinCtrl(wxSpinEvent& event)
+void UpdateDlg::OnSettingsSpinCtrl(wxSpinEvent& event)
 {
-	if(event.GetId() == updSpin->GetId()) EnableApplyButton(TestUpdateSettingsForChanges());
+	int id = event.GetId();
+
+	if(id == updSpin->GetId() || id == atSpin->GetId()) EnableApplyButton(TestUpdateSettingsForChanges());
 
 	event.Skip();
 }
 
-void UpdateDlg::OnAutoCheckUpdates(wxCommandEvent &event)
+void UpdateDlg::OnSettingsText(wxCommandEvent& event)
 {
-	updStaticBox->Enable(autoCheck->GetValue());
+	int id = event.GetId();
+
+	if(id == updSpin->GetId() || id == atSpin->GetId()) EnableApplyButton(TestUpdateSettingsForChanges());
+
+	event.Skip();
 }
 
 bool UpdateDlg::HideAfterStart() const
@@ -407,6 +439,8 @@ void UpdateDlg::LoadUpdateSettings(UpdateParams &params)
 	params.checkUpdatesAfterStart = ReadConfigValue(cfg, L"/CheckUpdatesAfterStart", false);
 	params.autoCheckUpdates = ReadConfigValue(cfg, L"/AutoCheckUpdates", true);
 	params.autoCheckInterval = ReadConfigValue(cfg, L"/AutoCheckInterval", 5);
+	params.autoTerminateApp = ReadConfigValue(cfg, L"/AutoTerminateApp", true);
+	params.autoTerminateAppInterval = ReadConfigValue(cfg, L"/AutoTerminateAppInterval", 30);
 }
 
 void UpdateDlg::ApplyUpdateSettings(const UpdateParams &params)
@@ -416,8 +450,12 @@ void UpdateDlg::ApplyUpdateSettings(const UpdateParams &params)
 	startCheck->SetValue(params.checkUpdatesAfterStart);
 	autoCheck->SetValue(params.autoCheckUpdates);
 	updSpin->SetValue(params.autoCheckInterval);
+	atCheck->SetValue(params.autoTerminateApp);
+	atSpin->SetValue(params.autoTerminateAppInterval);
 
 	wxQueueEvent(autoCheck, new wxCommandEvent(wxEVT_COMMAND_CHECKBOX_CLICKED, autoCheck->GetId()));
+	wxQueueEvent(atCheck, new wxCommandEvent(wxEVT_COMMAND_CHECKBOX_CLICKED, atCheck->GetId()));
+
 	RestartTimer(updSpin->GetValue());
 }
 
@@ -427,7 +465,9 @@ bool UpdateDlg::TestUpdateSettingsForChanges()
 		hideCheck->GetValue() != updateParams.hideAfterStart ||
 		startCheck->GetValue() != updateParams.checkUpdatesAfterStart ||
 		autoCheck->GetValue() != updateParams.autoCheckUpdates ||
-		updSpin->GetValue() != static_cast<int>(updateParams.autoCheckInterval)) return true;
+		updSpin->GetValue() != static_cast<int>(updateParams.autoCheckInterval) ||
+		atCheck->GetValue() != updateParams.autoTerminateApp ||
+		atSpin->GetValue() != static_cast<int>(updateParams.autoTerminateAppInterval)) return true;
 
 	return false;
 }
@@ -472,6 +512,8 @@ void UpdateDlg::SaveUpdateSettings(const UpdateParams &params)
 	cfg->Write(L"/CheckUpdatesAfterStart", params.checkUpdatesAfterStart);
 	cfg->Write(L"/AutoCheckUpdates", params.autoCheckUpdates);
 	cfg->Write(L"/AutoCheckInterval", params.autoCheckInterval);
+	cfg->Write(L"/AutoTerminateApp", params.autoTerminateApp);
+	cfg->Write(L"/AutoTerminateAppInterval", params.autoTerminateAppInterval);
 }
 
 void UpdateDlg::SaveDialogSettings()

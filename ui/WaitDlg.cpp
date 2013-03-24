@@ -2,7 +2,6 @@
 
 #include <wx/sizer.h>
 #include <wx/stattext.h>
-#include <iostream>
 
 WaitDlg::WaitDlg(wxWindow *parent, wxWindowID id, const wxString &text, const wxString &title) : wxDialog(parent, id, title, wxDefaultPosition, wxDefaultSize, wxCAPTION)
 {

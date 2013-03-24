@@ -1,5 +1,5 @@
 #include "ProcessUtils.h"
-#include <iostream>
+#include <wx/log.h>
 #include <algorithm>
 
 #ifdef __WXMSW__
@@ -16,7 +16,7 @@ void ProcessUtils::GetProcessList(std::vector<ProcessInfo> &proc_list)
 	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 	if(hSnapshot == INVALID_HANDLE_VALUE)
 	{
-		std::cerr << "invalid toolhelp snapshot handle" << std::endl;
+		wxLogError(L"Invalid toolhelp snapshot handle");
 		return;
 	}
 
@@ -25,7 +25,7 @@ void ProcessUtils::GetProcessList(std::vector<ProcessInfo> &proc_list)
 
 	if(!Process32First(hSnapshot, &pe))
 	{
-		std::cerr << "Process32First failed" << std::endl;
+		wxLogError(L"Process32First failed");
 		CloseHandle(hSnapshot);
 		return;
 	}
@@ -43,12 +43,72 @@ void ProcessUtils::GetProcessList(std::vector<ProcessInfo> &proc_list)
 	CloseHandle(hSnapshot);
 }
 
+bool ProcessUtils::FindProcess(const wxString &name, ProcessInfo *info)
+{
+	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	if(hSnapshot == INVALID_HANDLE_VALUE)
+	{
+		wxLogError(L"Invalid toolhelp snapshot handle");
+		return false;
+	}
+
+	PROCESSENTRY32 pe;
+	pe.dwSize = sizeof(PROCESSENTRY32);
+
+	if(!Process32First(hSnapshot, &pe))
+	{
+		wxLogError(L"Process32First failed");
+		CloseHandle(hSnapshot);
+		return false;
+	}
+
+	do
+	{
+		if(name == pe.szExeFile)
+		{
+			if(info)
+			{
+				info->pid = pe.th32ProcessID;
+				info->name = wxString(pe.szExeFile);
+			}
+
+			CloseHandle(hSnapshot);
+			return true;
+		}
+	}
+	while(Process32Next(hSnapshot, &pe));
+
+	CloseHandle(hSnapshot);
+	return false;
+}
+
 bool ProcessUtils::CheckProcess(const wxString &name)
 {
-	std::vector<ProcessInfo> proc_list;
-	GetProcessList(proc_list);
+	return FindProcess(name);
+}
 
-	return std::find_if(proc_list.begin(), proc_list.end(), [&name] (const ProcessInfo& info) {return info.name == name;}) != proc_list.end();
+bool ProcessUtils::KillProcess(const wxString &name)
+{
+	wxLogMessage(L"Trying to terminate process %s", name);
+
+	ProcessInfo info;
+	if(!FindProcess(name, &info)) return false;
+
+	HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, 0, info.pid);
+	if(hProcess != NULL)
+	{
+		BOOL res = TerminateProcess(hProcess, 1);
+		CloseHandle(hProcess);
+
+		if(res)
+		{
+			wxLogMessage(L"Process terminated");
+			return true;
+		}
+	}
+
+	wxLogWarning(L"Can not open process with pid %d for termination (error = %d)", info.pid, GetLastError());
+	return false;
 }
 
 #endif

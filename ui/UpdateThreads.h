@@ -26,6 +26,7 @@ private:
 	wxString action;
 	wxString statusMsg;
 	int progress;
+	bool terminate_flag;
 
 public:
 	DownloadThreadEvent(wxEventType eventType = wxEVT_THREAD, int id = wxID_ANY);
@@ -41,6 +42,9 @@ public:
 
 	int GetProgress() const;
 	void SetProgress(int value);
+
+	bool GetTerminateFlag() const;
+	void SetTerminateFlag(bool flag);
 };
 
 wxDECLARE_EVENT(wxEVT_COMMAND_CHECKTHREAD_COMPLETED, CheckThreadEvent);
@@ -51,7 +55,6 @@ class CheckThread : public wxThread
 {
 public:
 	CheckThread(wxEvtHandler *handler, const std::vector<wxString> &urls);
-	~CheckThread();
 
 private:
 	ExitCode Entry();
@@ -64,7 +67,6 @@ class DownloadThread : public wxThread
 {
 public:
 	DownloadThread(wxThreadKind kind = wxTHREAD_DETACHED, wxEvtHandler *handler = nullptr, AppInfoProvider *appProvider = nullptr);
-	~DownloadThread();
 
 private:
 	ExitCode Entry();

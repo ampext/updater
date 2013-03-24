@@ -2,6 +2,7 @@
 
 #include <wx/dialog.h>
 #include <wx/button.h>
+#include <wx/timer.h>
 
 #include "lib/AppInfoProvider.h"
 #include "DownloadPanel.h"
@@ -19,12 +20,21 @@ public:
 private:
 	void OnClose(wxCloseEvent &event);
 	void OnCancel(wxCommandEvent &event);
+	void OnKillApp(wxCommandEvent &event);
 	void EndModal(int code);
 	void OnUpdateThread(DownloadThreadEvent &event);
 	void OnUpdateThreadCompleted(wxThreadEvent &event);
+	void OnKillTimer(wxTimerEvent &event);
 
 private:
 	DownloadPanel *panel;
 	wxButton *actionButton;
+	wxButton *termButton;
 	DownloadThread *thread;
+
+	wxTimer *termTimer;
+	wxString procName;
+	bool autoTermination;
+	time_t timerStartTime;
+	size_t timeLimit;
 };

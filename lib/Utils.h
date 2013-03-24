@@ -14,7 +14,7 @@ public:
 		
 	}
 	
-	~Exception() throw()
+	virtual ~Exception() throw()
 	{
 		
 	}

@@ -18,7 +18,7 @@ class UpdateDlg: public wxDialog
 {
 public:
 	UpdateDlg(wxWindow *parent = nullptr);
-	~UpdateDlg();
+	virtual ~UpdateDlg();
 
 	void ShowSettings();
 	void ShowUpdates();
@@ -35,6 +35,8 @@ private:
 		bool checkUpdatesAfterStart;
 		bool autoCheckUpdates;
 		unsigned int autoCheckInterval;
+		bool autoTerminateApp;
+		unsigned int autoTerminateAppInterval;
 
 		UpdateParams()
 		{
@@ -43,6 +45,8 @@ private:
 			checkUpdatesAfterStart = false;
 			autoCheckUpdates = false;
 			autoCheckInterval = 0;
+			autoTerminateApp = true;
+			autoTerminateAppInterval = 30;
 		}
 
 	} updateParams;
@@ -62,8 +66,8 @@ private:
 	void OnInstallUpdates(wxCommandEvent& event);
 	void OnUpdateTimer(wxTimerEvent &event);
 	void OnSettingsCheckBox(wxCommandEvent &event);
-	void OnSpinCtrl(wxSpinEvent& event);
-
+	void OnSettingsSpinCtrl(wxSpinEvent& event);
+	void OnSettingsText(wxCommandEvent& event);
 
 	void EnableApplyButton(bool enable);
 	bool TestUpdateSettingsForChanges();
@@ -92,8 +96,9 @@ private:
 	wxCheckBox *notifyCheck;
 	wxCheckBox *autoCheck;
 	wxCheckBox *startCheck;
+	wxCheckBox *atCheck;
 	wxSpinCtrl *updSpin;
-	wxStaticBox *updStaticBox;
+	wxSpinCtrl *atSpin;
 
 	UpdaterProvider updProvider;
 	TargetAppProvider appProvider;

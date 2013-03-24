@@ -17,11 +17,6 @@ CheckThread::CheckThread(wxEvtHandler *handler, const std::vector<wxString> &url
 
 }
 
-CheckThread::~CheckThread()
-{
-
-}
-
 wxThread::ExitCode CheckThread::Entry()
 {
 	std::vector<UpdateInfo> info;
@@ -48,12 +43,6 @@ DownloadThread::DownloadThread(wxThreadKind kind, wxEvtHandler *handler, AppInfo
 	url = appProvider->GetUpdateURL();
 	installPath = appProvider->GetInstallDir();
 	appName = appProvider->GetName();
-}
-
-
-DownloadThread::~DownloadThread()
-{
-	
 }
 
 wxThread::ExitCode DownloadThread::Entry()
@@ -133,16 +122,22 @@ wxThread::ExitCode DownloadThread::Entry()
 		return reinterpret_cast<wxThread::ExitCode>(1);
 	}
 
-	while(!TestDestroy() && ProcessUtils::CheckProcess(info.process_name))
+	if(info.process_name.IsEmpty()) wxLogMessage("Empty process name, skipping waiting for process termination");
+	else
 	{
-		DownloadThreadEvent *event = new DownloadThreadEvent(wxEVT_COMMAND_DOWNLOADTHREAD_UPDATE, wxID_ANY);
+		while(!TestDestroy() && ProcessUtils::CheckProcess(info.process_name))
+		{
+			DownloadThreadEvent *event = new DownloadThreadEvent(wxEVT_COMMAND_DOWNLOADTHREAD_UPDATE, wxID_ANY);
 
-		event->SetAction(L"Waiting for process termination");
-		event->SetStatusMsg(wxString::Format(L"Process name: %s", info.process_name));
-		event->SetProgress(0);
+			event->SetAction(wxString::Format(L"Waiting for %s termination", info.app_name));
+			event->SetStatusMsg(wxString::Format(L"Process name - %s. Please save your application work.", info.process_name));
+			event->SetProgress(0);
+			event->SetTerminateFlag(true);
+			event->SetString(info.process_name);
 
-		wxQueueEvent(handler, event);
-		wxSleep(1);
+			wxQueueEvent(handler, event);
+			wxSleep(1);
+		}
 	}
 
 	if(!TestDestroy() && !updater.InstallUpdate(updFileName, installPath))
@@ -183,7 +178,7 @@ void CheckThreadEvent::SetInfo(const std::vector<UpdateInfo> &info)
 	this->info = info;
 }
 
-DownloadThreadEvent::DownloadThreadEvent(wxEventType eventType, int id) : wxThreadEvent(eventType, id)
+DownloadThreadEvent::DownloadThreadEvent(wxEventType eventType, int id) : wxThreadEvent(eventType, id), terminate_flag(false)
 {
 
 }
@@ -193,6 +188,7 @@ DownloadThreadEvent::DownloadThreadEvent(const DownloadThreadEvent &event) : wxT
 	SetAction(event.GetAction().Clone());
 	SetStatusMsg(event.GetStatusMsg().Clone());
 	SetProgress(event.GetProgress());
+	SetTerminateFlag(event.GetTerminateFlag());
 }
 
 wxEvent *DownloadThreadEvent::Clone() const
@@ -228,4 +224,14 @@ int DownloadThreadEvent::GetProgress() const
 void DownloadThreadEvent::SetProgress(int value)
 {
 	progress = value;
+}
+
+bool DownloadThreadEvent::GetTerminateFlag() const
+{
+	return terminate_flag;
+}
+
+void DownloadThreadEvent::SetTerminateFlag(bool flag)
+{
+	terminate_flag = flag;
 }

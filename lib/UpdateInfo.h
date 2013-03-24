@@ -57,7 +57,7 @@ struct UpdateInfo
 
 	bool IsOk() const
 	{
-		return !app_name.IsEmpty() && !app_version.IsEmpty() && !process_name.IsEmpty();
+		return !app_name.IsEmpty() && !app_version.IsEmpty()/* && !process_name.IsEmpty()*/;
 	}
 
 	bool IsEmpty() const

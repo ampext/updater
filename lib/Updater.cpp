@@ -3,6 +3,7 @@
 #include <iostream>
 #include <sstream>
 #include <array>
+
 #include <boost/uuid/sha1.hpp>
 
 #include <wx/log.h>
@@ -132,6 +133,8 @@ wxString Updater::GetUpdateInfo(const wxString &name) const
 {
 	wxURL url(baseURL + name);
 
+	wxLogMessage("Fetching update info from '%s'", baseURL + name);
+
 	if(!url.IsOk())
 	{
 		wxLogError("Bad URL '%s'", baseURL + name);
@@ -140,7 +143,8 @@ wxString Updater::GetUpdateInfo(const wxString &name) const
 	
 	if(url.GetError() == wxURL_NOERR)
 	{
-		wxInputStream *stream = url.GetInputStream();
+		std::unique_ptr<wxInputStream> stream(url.GetInputStream());
+		
 		if(!stream)
 		{
 			wxLogError("Bad URL input stream '%s'", baseURL + name);
@@ -183,7 +187,7 @@ bool Updater::DownloadFile(const wxString &srcUrl, const wxString &dstPath, cons
 
 	if(url.GetError() == wxURL_NOERR)
 	{
-		wxInputStream *stream = url.GetInputStream();
+		std::unique_ptr<wxInputStream> stream(url.GetInputStream());
 		if(!stream)
 		{
 			wxLogError(L"Can not get input stream from URL '%s'", srcUrl);
@@ -431,7 +435,11 @@ bool Updater::Check(UpdateInfo *info)
 {
 	wxString upd_xml = GetUpdateInfo(L"/update_info.xml");
 
-	if(upd_xml.IsEmpty()) return false;
+	if(upd_xml.IsEmpty())
+	{
+		wxLogWarning(L"update_info.xml is empty");
+		return false;
+	}
 	if(info)
 	{
 		try
