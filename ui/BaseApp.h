@@ -51,6 +51,11 @@ protected:
 	{
 		wxLog *fileLogger = nullptr;
 		
+		if(!wxDirExists(GetSettingsPath()))
+		{
+			wxMkDir(GetSettingsPath(), wxS_DIR_DEFAULT);
+		}
+
 		logStream.open(GetLogFilePath().ToStdString().c_str(), std::ofstream::out | std::ofstream::app);
 
 		if(logStream.is_open() && logStream.good())
