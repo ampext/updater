@@ -36,8 +36,6 @@ bool UpdaterApp::OnInit()
 	SetupLogger();
 	SetupConfig();
 
-	wxSocketBase::Initialize();
-
 	if(!wxAppConsole::OnInit())
 	{
 		wxLogError(L"Failed to init application");

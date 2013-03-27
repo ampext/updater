@@ -86,15 +86,19 @@ wxThread::ExitCode DownloadThread::Entry()
 		return reinterpret_cast<wxThread::ExitCode>(1);		
 	}
 
-	updater.SetProgressCallback([&] (Updater::UpdateAction action, wxLongLong_t val1, wxLongLong_t val2, const wxString &str) -> bool
+	updater.SetProgressCallback([&] (Updater::UpdateAction action, wxLongLong_t val1, wxLongLong_t val2, wxLongLong_t val3, const wxString &str) -> bool
 	{
 		DownloadThreadEvent *event = new DownloadThreadEvent(wxEVT_COMMAND_DOWNLOADTHREAD_UPDATE, wxID_ANY);
 
 		if(action == Updater::UpdateDownload)
 		{
+			wxString strReaded = wxFileName::GetHumanReadableSize(wxULongLong(val1), L"0");
+			wxString strTotal = (val2 == -1 ? L"???" : wxFileName::GetHumanReadableSize(wxULongLong(val2)));
+			wxString strSpeed = (val3 == -1 ? L"???" : wxFileName::GetHumanReadableSize(wxULongLong(val3)) + L"/s");
+
 			event->SetAction(L"Downloading");
-			event->SetStatusMsg(wxString::Format(L"Downloaded %s of %s at %s", wxFileName::GetHumanReadableSize(wxULongLong(val1)), wxFileName::GetHumanReadableSize(wxULongLong(val2)), str));
-			event->SetProgress(100 * val1 / val2);
+			event->SetStatusMsg(wxString::Format(L"Downloaded %s of %s at %s", strReaded, strTotal, strSpeed));
+			event->SetProgress(val2 <= 0 ? 0 :(100 * val1 / val2));
 		}
 		else if(action == Updater::UpdateInstall)
 		{

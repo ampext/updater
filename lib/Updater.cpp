@@ -4,14 +4,15 @@
 #include <sstream>
 #include <array>
 
-#include <boost/uuid/sha1.hpp>
-
 #include <wx/log.h>
-#include <wx/url.h>
 #include <wx/sstream.h>
 #include <wx/wfstream.h>
 #include <wx/zipstrm.h>
 #include <wx/filename.h>
+#include <wx/regex.h>
+
+#include <boost/uuid/sha1.hpp>
+#include "Url.h"
 
 #define wxLOG_COMPONENT "updater"
 
@@ -40,17 +41,7 @@ bool Updater::DownloadUpdate(const UpdateInfo &info, wxString &updFileName)
 
 	auto downloadFunc = [&](wxLongLong_t value, wxLongLong_t size, wxLongLong_t speed) -> bool
 	{
-		if(progressFunc)
-		{
-			if(size == 0)
-			{
-				wxLogWarning("Invalid update size");
-				return true;
-			}
-
-			return progressFunc(UpdateDownload, value, size, wxFileName::GetHumanReadableSize(wxULongLong(speed)) + L"/s");
-		}
-
+		if(progressFunc) return progressFunc(UpdateDownload, value, size, speed, wxEmptyString);
 		return false;
 	};
 
@@ -62,11 +53,14 @@ bool Updater::DownloadUpdate(const UpdateInfo &info, wxString &updFileName)
 			wxMkDir(tmpFilePath, wxS_DIR_DEFAULT);
 		}
 
+		wxRegEx startUri(L"^([[:alpha:]]+://)");
+
 		wxString url = info.elements[0]->files[0].src;
+		if(!startUri.Matches(url)) url = baseURL + L"/" + url;
 
-		wxLogMessage(L"Downloading '%s'", baseURL + L"/" + url);
+		wxLogMessage(L"Downloading '%s'", url);
 
-		if(!DownloadFile(baseURL + L"/" + url, tmpFileName, downloadFunc)) throw std::exception();
+		if(!DownloadFile(url, tmpFileName, downloadFunc)) throw std::exception();
 	}
 	catch(std::exception &e)
 	{
@@ -79,7 +73,7 @@ bool Updater::DownloadUpdate(const UpdateInfo &info, wxString &updFileName)
 
 	if(!hash.IsEmpty())
 	{
-		progressFunc(UpdateCheckSum, 0, 0, wxEmptyString);
+		progressFunc(UpdateCheckSum, 0, 0, 0, wxEmptyString);
 
 		wxString fileHash = GetFileSHA1(tmpFileName);
 
@@ -99,7 +93,7 @@ bool Updater::InstallUpdate(const wxString &updFileName, const wxString &dstPath
 {
 	auto installFunc = [&](wxLongLong_t count, wxLongLong_t total, const wxString &name) -> bool
 	{
-		if(progressFunc) return progressFunc(UpdateInstall, count, total, name);
+		if(progressFunc) return progressFunc(UpdateInstall, count, total, 0, name);
 		return false;
 	};
 
@@ -131,35 +125,32 @@ bool Updater::UpdateVersionInfo(const UpdateInfo &info)
 
 wxString Updater::GetUpdateInfo(const wxString &name) const
 {
-	wxURL url(baseURL + name);
+	UrlHelper url(baseURL + name);
+	
+	if(!url.IsOk())
+	{
+		wxLogError("Can not open URL '%s' - %s", url.GetUrl(), url.GetError());
+	}
 
 	wxLogMessage("Fetching update info from '%s'", baseURL + name);
 
-	if(!url.IsOk())
+	wxStringOutputStream str_stream;
+
+	auto writeDataFunc = [&str_stream] (const void *data, size_t size) -> size_t
 	{
-		wxLogError("Bad URL '%s'", baseURL + name);
+		str_stream.Write(data, size);
+		return str_stream.LastWrite();
+	};
+
+	url.SetWriteDataCallback(writeDataFunc);
+
+	if(!url.Perform())
+	{
+		wxLogError(L"Can not fetch specified URL ('%s')", url.GetUrl());
 		return wxEmptyString;
 	}
-	
-	if(url.GetError() == wxURL_NOERR)
-	{
-		std::unique_ptr<wxInputStream> stream(url.GetInputStream());
-		
-		if(!stream)
-		{
-			wxLogError("Bad URL input stream '%s'", baseURL + name);
-			return wxEmptyString;
-		}
-		
-		wxStringOutputStream str_stream;
-		stream->Read(str_stream);
-		
-		return str_stream.GetString();
-	}
 
-	wxLogWarning("wxURLError %d", url.GetError());
-
-	return wxEmptyString;
+	return str_stream.GetString();
 }
 
 bool Updater::DownloadFile(const wxString &srcUrl, const wxString &dstPath, const DownloadFunc &callback)
@@ -172,62 +163,36 @@ bool Updater::DownloadFile(const wxString &srcUrl, const wxString &dstPath, cons
 		return false;
 	}
 
-	wxURL url(srcUrl);
-	
+	UrlHelper url(srcUrl);
+
 	if(!url.IsOk())
 	{
-		wxLogError(L"Can not open URL '%s'", srcUrl);
-		return false;
+		wxLogError("Can not open URL '%s' - %s", url.GetUrl(), url.GetError());
 	}
 
-	std::array<char, 10000> buf;
-	size_t readed = 0;
+	url.SetWriteDataCallback([&fileStream] (const void *data, size_t size) -> size_t
+	{
+		fileStream.Write(data, size);
+		return fileStream.LastWrite();
+	});
+
 	time_t last_time = time(nullptr);
-	size_t last_readed = 0;
 
-	if(url.GetError() == wxURL_NOERR)
+	url.SetProgressCallback([&url, &callback, &last_time] (wxLongLong_t bytes, wxLongLong_t total) -> bool
 	{
-		std::unique_ptr<wxInputStream> stream(url.GetInputStream());
-		if(!stream)
+		if(callback && difftime(time(nullptr), last_time) >= 1.0)
 		{
-			wxLogError(L"Can not get input stream from URL '%s'", srcUrl);
-			return false;
+			last_time = time(nullptr);
+			return callback(bytes, total, url.GetDownloadSpeed());
 		}
 
-		size_t stream_size = stream->GetSize();
-		
-		while(stream->CanRead())
-		{
-			stream->Read(static_cast<void *>(buf.data()), buf.size());
-			fileStream.Write(static_cast<void *>(buf.data()), stream->LastRead());
+		return false;
+	});
 
-			readed += stream->LastRead();
-			last_readed += stream->LastRead();
-			int delta = time(nullptr) - last_time;
-
-			if(callback && delta >= 1)
-			{
-				if(callback(readed, stream_size, static_cast<float>(last_readed) / delta)) return false;
-
-				last_time = time(nullptr);
-				last_readed = 0;
-			}
-		}
-
-		if(callback) callback(stream_size, stream_size, last_readed);
-	}
-	else
+	if(!url.Perform())
 	{
-		switch(url.GetError())
-		{
-			case wxURL_SNTXERR: wxLogError(L"Syntax error in the URL string"); break;
-			case wxURL_NOPROTO: wxLogError(L"Found no protocol which can get this URL"); break;
-			case wxURL_NOHOST: wxLogError(L"A host name is required for this protocol"); break;
-			case wxURL_NOPATH: wxLogError(L"A path is required for this protocol"); break;
-			case wxURL_CONNERR: wxLogError(L"Connection error"); break;
-			case  wxURL_PROTOERR: wxLogError(L"An error occurred during negotiation"); break;
-			default: wxLogError(L"WTF URL error");
-		}
+		wxLogError(L"Can not fetch specified URL ('%s')", url.GetUrl());
+		return false;
 	}
 
 	return true;

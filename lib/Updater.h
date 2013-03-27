@@ -18,7 +18,7 @@ public:
 		UpdateCheckSum
 	};
 
-	typedef std::function<bool (UpdateAction, wxLongLong_t, wxLongLong_t, const wxString&)> ProgressFunc;
+	typedef std::function<bool (UpdateAction, wxLongLong_t, wxLongLong_t, wxLongLong_t, const wxString&)> ProgressFunc;
 	typedef std::function<bool (wxLongLong_t, wxLongLong_t, wxLongLong_t)> DownloadFunc;
 	typedef std::function<bool (wxLongLong_t, wxLongLong_t, const wxString&)> ExtractFunc;
 
