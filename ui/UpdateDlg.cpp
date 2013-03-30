@@ -436,7 +436,7 @@ void UpdateDlg::LoadUpdateSettings(UpdateParams &params)
 
 	params.showNotifications = ReadConfigValue(cfg, L"/ShowNotifications", true);
 	params.hideAfterStart = ReadConfigValue(cfg, L"/HideAfterStart", false);
-	params.checkUpdatesAfterStart = ReadConfigValue(cfg, L"/CheckUpdatesAfterStart", false);
+	params.checkUpdatesAfterStart = ReadConfigValue(cfg, L"/CheckUpdatesAfterStart", true);
 	params.autoCheckUpdates = ReadConfigValue(cfg, L"/AutoCheckUpdates", true);
 	params.autoCheckInterval = ReadConfigValue(cfg, L"/AutoCheckInterval", 5);
 	params.autoTerminateApp = ReadConfigValue(cfg, L"/AutoTerminateApp", true);
