@@ -5,7 +5,7 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}")
 
 find_package(wxWidgets COMPONENTS xrc html adv core xml base REQUIRED)
 find_package(Boost)
-find_package(Curl)
+find_package(CURL)
 
 include("${wxWidgets_USE_FILE}")
 include_directories(${PROJECT_SOURCE_DIR} ${Boost_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS})

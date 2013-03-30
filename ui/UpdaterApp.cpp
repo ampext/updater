@@ -314,7 +314,9 @@ void UpdaterApp::RestartAndUpdate()
 
 void UpdaterApp::OnShowNotification(wxCommandEvent &event)
 {
-	trayIcon->ShowBalloon(L"New updates available", event.GetString(), 5000, wxICON_INFORMATION);
+	#ifdef __WXMSW__
+		trayIcon->ShowBalloon(L"New updates available", event.GetString(), 5000, wxICON_INFORMATION);
+	#endif
 }
 
 wxString UpdaterApp::GetUpdateDeltaString() const

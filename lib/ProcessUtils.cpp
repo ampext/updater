@@ -2,12 +2,12 @@
 #include <wx/log.h>
 #include <algorithm>
 
+#define wxLOG_COMPONENT "updater"
+
 #ifdef __WXMSW__
 
 #include <Windows.h>
 #include <TlHelp32.h>
-
-#define wxLOG_COMPONENT "updater"
 
 void ProcessUtils::GetProcessList(std::vector<ProcessInfo> &proc_list)
 {
@@ -108,6 +108,28 @@ bool ProcessUtils::KillProcess(const wxString &name)
 	}
 
 	wxLogWarning(L"Can not open process with pid %d for termination (error = %d)", info.pid, GetLastError());
+	return false;
+}
+
+#else
+
+void ProcessUtils::GetProcessList(std::vector<ProcessInfo> &proc_list)
+{
+	proc_list.clear();
+}
+
+bool ProcessUtils::FindProcess(const wxString &name, ProcessInfo *info)
+{
+	return false;
+}
+
+bool ProcessUtils::CheckProcess(const wxString &name)
+{
+	return false;	
+}
+
+bool ProcessUtils::KillProcess(const wxString &name)
+{
 	return false;
 }
 
