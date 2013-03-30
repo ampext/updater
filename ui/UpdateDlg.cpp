@@ -61,10 +61,10 @@ wxWindow *UpdateDlg::CreateUpdatesPage(wxWindow *parent)
 	wxDataViewColumn *statusColumn = new wxDataViewColumn(wxEmptyString, new DataViewBitmapRenderer(), 0, 24, wxALIGN_CENTER, 0);
     updListCtrl->AppendColumn(statusColumn);
 
-	updListCtrl->AppendTextColumn("Name");
-	updListCtrl->AppendTextColumn("Installed");
-	updListCtrl->AppendTextColumn("Version");
-	updListCtrl->AppendTextColumn("Size");
+	updListCtrl->AppendTextColumn(L"Name");
+	updListCtrl->AppendTextColumn(L"Installed");
+	updListCtrl->AppendTextColumn(L"Version");
+	updListCtrl->AppendTextColumn(L"Size");
 
 	columnsIds = {L"StatusColumn", L"NameColumn", L"LocalVersionColumn", L"UpdateVersionColumn", L"SizeColumn"};
 
@@ -322,12 +322,12 @@ void UpdateDlg::RestartTimer(unsigned int hours)
 	timer->Start(1000 * 3600 * hours);
 	timerStartTime = wxDateTime::Now();
 
-	//wxLogMessage("Timer restarted to %d seconds", 3600 * hours);
+	//wxLogMessage(LTimer restarted to %d seconds", 3600 * hours);
 }
 
 void UpdateDlg::OnUpdateTimer(wxTimerEvent &event)
 {
-	wxLogMessage("Scheduled updates checking...");
+	wxLogMessage(L"Scheduled updates checking...");
 	CheckUpdates();
 }
 
@@ -415,7 +415,7 @@ wxTimeSpan UpdateDlg::GetTimeToNextUpdate() const
 
 	if(!currentTime.IsEarlierThan(updateTime))
 	{
-		wxLogWarning("Strange time");
+		wxLogWarning(L"Strange time");
 		return wxTimeSpan();
 	}
 

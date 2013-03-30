@@ -28,7 +28,7 @@ wxThread::ExitCode CheckThread::Entry()
 
 		if(!updater.Check(&upd_info))
 		{
-			wxLogMessage("Failed to check URL '" + urls[i] + "'");
+			wxLogMessage(L"Failed to check URL '%'", urls[i]);
 			info.push_back(UpdateInfo());
 		}
 		else info.push_back(upd_info);
@@ -126,7 +126,10 @@ wxThread::ExitCode DownloadThread::Entry()
 		return reinterpret_cast<wxThread::ExitCode>(1);
 	}
 
-	if(info.process_name.IsEmpty()) wxLogMessage("Empty process name, skipping waiting for process termination");
+	if(info.process_name.IsEmpty())
+	{
+		wxLogMessage(L"Empty process name, skipping waiting for process termination");
+	}
 	else
 	{
 		while(!TestDestroy() && ProcessUtils::CheckProcess(info.process_name))

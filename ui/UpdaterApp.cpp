@@ -186,7 +186,7 @@ bool UpdaterApp::CheckInstance()
 
 		if(!terminated)
 		{
-			wxLogError("Another copy of program already running. Please close the program before upgrading.");
+			wxLogError(L"Another copy of program already running. Please close the program before upgrading.");
 			std::cout << "Exiting..." << std::endl;
 			return false;
 		}
@@ -243,14 +243,14 @@ bool UpdaterApp::CopyToTmpAndExec()
 
 	if(!need_admin_right)
 	{
-		wxLogMessage("Updater directory '%s' is writable", localUpdFileName.GetPath());
+		wxLogMessage(L"Updater directory '%s' is writable", localUpdFileName.GetPath());
 	}
 
 	#ifdef __WXMSW__
 		HINSTANCE hInst = ShellExecute(NULL, (need_admin_right ? L"runas" : L"open"), tmpUpdFileName.GetFullPath().ToStdWstring().c_str(), cmd_line.ToStdWstring().c_str(), NULL, SW_SHOWNORMAL);
 		if((int) hInst <= 32)
 		{
-			wxLogError("ShellExecute failed with %d code", (int) hInst);
+			wxLogError(L"ShellExecute failed with %d code", (int) hInst);
 			return false;
 		}
 	#endif
@@ -269,7 +269,7 @@ bool UpdaterApp::ExecuteOriginal(const wxString &path)
 		HINSTANCE hInst = ShellExecute(NULL, L"open", updFileName.GetFullPath().ToStdWstring().c_str(), cmd_line.ToStdWstring().c_str(), NULL, SW_SHOWNORMAL);
 		if((int) hInst <= 32)
 		{
-			wxLogError("ShellExecute failed with %d code", (int) hInst);
+			wxLogError(L"ShellExecute failed with %d code", (int) hInst);
 			return false;
 		}
 	#endif

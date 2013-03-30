@@ -101,7 +101,7 @@ wxString UpdaterProvider::GetLocalVersion() const
 	wxString base_version = L"0.1";
 
 	#ifdef BUILD_NUMBER
-		return wxString::Format("%s.%d", base_version, BUILD_NUMBER);
+		return wxString::Format(L"%s.%d", base_version, BUILD_NUMBER);
 	#else
 		return base_version;
 	#endif
@@ -174,7 +174,7 @@ wxString TargetAppProvider::GetProcName() const
 wxString TargetAppProvider::GetLocalVersion() const
 {
 	wxString version;
-	wxConfigBase::Get()->Read(L"/Software/" + GetName() + "/Version", &version, wxEmptyString);
+	wxConfigBase::Get()->Read(L"/Software/" + GetName() + L"/Version", &version, wxEmptyString);
 	
 	return version;
 }

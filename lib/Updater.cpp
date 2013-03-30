@@ -49,7 +49,7 @@ bool Updater::DownloadUpdate(const UpdateInfo &info, wxString &updFileName)
 	{
 		if(!wxDirExists(tmpFilePath))
 		{
-			wxLogMessage(L"Creating path: " + tmpFilePath);
+			wxLogMessage(L"Creating path '%s'", tmpFilePath);
 			wxMkDir(tmpFilePath, wxS_DIR_DEFAULT);
 		}
 
@@ -83,7 +83,7 @@ bool Updater::DownloadUpdate(const UpdateInfo &info, wxString &updFileName)
 			return false;
 		}
 	}
-	else wxLogWarning("Empty hash, skipping chesk sum verification");
+	else wxLogWarning(L"Empty hash, skipping chesk sum verification");
 
 	updFileName = tmpFileName;
 	return true;
@@ -99,7 +99,7 @@ bool Updater::InstallUpdate(const wxString &updFileName, const wxString &dstPath
 
 	try
 	{
-		wxLogMessage("Extracting file(s) to '%s'", dstPath);
+		wxLogMessage(L"Extracting file(s) to '%s'", dstPath);
 		if(!ExtractFilesFromZip(updFileName, dstPath, installFunc)) throw std::exception();
 	}
 	catch(std::exception &e)
@@ -129,10 +129,10 @@ wxString Updater::GetUpdateInfo(const wxString &name) const
 	
 	if(!url.IsOk())
 	{
-		wxLogError("Can not open URL '%s' - %s", url.GetUrl(), url.GetError());
+		wxLogError(L"Can not open URL '%s' - %s", url.GetUrl(), url.GetError());
 	}
 
-	wxLogMessage("Fetching update info from '%s'", baseURL + name);
+	wxLogMessage(L"Fetching update info from '%s'", baseURL + name);
 
 	wxStringOutputStream str_stream;
 
@@ -167,7 +167,7 @@ bool Updater::DownloadFile(const wxString &srcUrl, const wxString &dstPath, cons
 
 	if(!url.IsOk())
 	{
-		wxLogError("Can not open URL '%s' - %s", url.GetUrl(), url.GetError());
+		wxLogError(L"Can not open URL '%s' - %s", url.GetUrl(), url.GetError());
 	}
 
 	url.SetWriteDataCallback([&fileStream] (const void *data, size_t size) -> size_t
@@ -219,7 +219,7 @@ bool Updater::ExtractFilesFromZip(const wxString &srcPath, const wxString &dstPa
 
 	if(!wxDirExists(dstPath))
 	{
-		wxLogVerbose(L"Creating path: " + dstPath);
+		wxLogVerbose(L"Creating path '%s'", dstPath);
 		wxMkDir(dstPath, wxS_DIR_DEFAULT);
 	}
 
@@ -344,7 +344,7 @@ UpdateInfo Updater::ParseUpdateInfoXML(const wxString &src) const
 	
 	wxXmlNode *elementNode = elementsNode->GetChildren();
 	
-	while(elementNode && elementNode->GetName() == "element")
+	while(elementNode && elementNode->GetName() == L"element")
 	{
 		info.elements.push_back(ParseElementNode(elementNode));
 		
@@ -379,11 +379,11 @@ std::shared_ptr<UpdateElement> Updater::ParseElementNode(wxXmlNode *elementNode)
 		{
 			UpdateFile update_file;
 			
-			node->GetAttribute("src", &update_file.src);
-			node->GetAttribute("hash", &update_file.hash);
+			node->GetAttribute(L"src", &update_file.src);
+			node->GetAttribute(L"hash", &update_file.hash);
 
 			wxString str_size;
-			node->GetAttribute("size", &str_size);
+			node->GetAttribute(L"size", &str_size);
 
 			if(!str_size.ToULongLong(&update_file.size)) update_file.size = 0;
 			

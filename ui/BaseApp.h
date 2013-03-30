@@ -15,7 +15,7 @@ class FileLogFormatter: public wxLogFormatter
 public:
 	virtual wxString Format(wxLogLevel level, const wxString& msg, const wxLogRecordInfo& info) const
 	{
-		return wxString::Format("[%s][%s]: %s", FormatTime(info.timestamp), info.component, msg);
+		return wxString::Format(L"[%s][%s]: %s", FormatTime(info.timestamp), info.component, msg);
 	}
 
 	virtual wxString FormatTime(time_t time) const
@@ -29,7 +29,7 @@ class UiLogFormatter: public wxLogFormatter
 public:
 	virtual wxString Format(wxLogLevel level, const wxString& msg, const wxLogRecordInfo& info) const
 	{
-		return wxString::Format("[%s][%s]: %s", FormatTime(info.timestamp), info.component, msg);
+		return wxString::Format(L"[%s][%s]: %s", FormatTime(info.timestamp), info.component, msg);
 	}
 
 	virtual wxString FormatTime(time_t time) const
@@ -63,7 +63,7 @@ protected:
 			fileLogger = new wxLogStream(static_cast<std::ostream *>(&logStream));
 			fileLogger->SetFormatter(new FileLogFormatter);
 		}
-		else wxLogError(L"Can not open log file '" + GetLogFilePath() + "'");
+		else wxLogError(L"Can not open log file '%s'", GetLogFilePath());
 
 		wxLog *errLogger = new wxLogStderr();
 		errLogger->SetFormatter(new UiLogFormatter);
@@ -93,15 +93,15 @@ protected:
 	{
 		if(!wxDirExists(GetSettingsPath()))
 		{
-			wxLogMessage(L"Creating settings path '" + GetSettingsPath() + "'");
+			wxLogMessage(L"Creating settings path '%s'", GetSettingsPath());
 			wxMkDir(GetSettingsPath(), wxS_DIR_DEFAULT);
 		}
 
-		wxLogMessage(L"Config path '" + GetSettingsFilePath() + "'");
+		wxLogMessage(L"Config path '%s'", GetSettingsFilePath());
 
-		wxFileConfig *pConfig = new wxFileConfig(L"Updater Client", L"Ololo Corp.", GetSettingsFilePath(), wxEmptyString, wxCONFIG_USE_LOCAL_FILE);
+		wxFileConfig *pConfig = new wxFileConfig(L"Updater Client", wxEmptyString, GetSettingsFilePath(), wxEmptyString, wxCONFIG_USE_LOCAL_FILE);
 		if(pConfig) wxConfigBase::Set(pConfig);
-		else wxLogError("Can't create config");
+		else wxLogError(L"Can not create config");
 	}
 
 	void OnExit(bool close_log = true)

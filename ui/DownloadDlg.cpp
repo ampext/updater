@@ -20,9 +20,9 @@ DownloadDlg::DownloadDlg(wxWindow *parent, wxWindowID id, AppInfoProvider *appPr
 	wxBoxSizer *btnSizer = new wxBoxSizer(wxHORIZONTAL);
 	{
 		btnSizer->AddStretchSpacer(1);
-		btnSizer->Add(termButton = new wxButton(this, wxID_ANY, "Terminate"), 0, wxALL | wxEXPAND, 0);
+		btnSizer->Add(termButton = new wxButton(this, wxID_ANY, L"Terminate"), 0, wxALL | wxEXPAND, 0);
 		btnSizer->AddSpacer(5);
-		btnSizer->Add(actionButton = new wxButton(this, wxID_ANY, "Cancel"), 0, wxALL | wxEXPAND, 0);
+		btnSizer->Add(actionButton = new wxButton(this, wxID_ANY, L"Cancel"), 0, wxALL | wxEXPAND, 0);
 	}
 	sizer->Add(btnSizer, 0, wxALL | wxEXPAND, 5);
 
