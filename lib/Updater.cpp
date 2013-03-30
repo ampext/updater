@@ -34,7 +34,7 @@ wxString Updater::GetBaseURL() const
 bool Updater::DownloadUpdate(const UpdateInfo &info, wxString &updFileName)
 {
 	if(info.elements.empty()) return false;
-	if(info.elements[0]->files.empty()) return false;
+	if(info.elements[0]->files.empty() || info.elements[0]->files[0].src.empty()) return false;
 
 	wxString tmpFilePath = wxFileName::GetTempDir() + wxFileName::GetPathSeparator() + L"updater" + wxFileName::GetPathSeparator();
 	wxString tmpFileName = wxFileName::CreateTempFileName(tmpFilePath);
