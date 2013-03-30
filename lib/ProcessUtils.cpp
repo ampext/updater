@@ -118,7 +118,7 @@ void ProcessUtils::GetProcessList(std::vector<ProcessInfo> &proc_list)
 	proc_list.clear();
 }
 
-bool ProcessUtils::FindProcess(const wxString &name, ProcessInfo *info = nullptr)
+bool ProcessUtils::FindProcess(const wxString &name, ProcessInfo *info)
 {
 	return false;
 }
