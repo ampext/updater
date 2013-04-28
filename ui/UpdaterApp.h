@@ -42,6 +42,7 @@ private:
 	void RestartAndUpdate();
 
 	wxString GetUpdateDeltaString() const;
+	void LogOwnerInfo() const;
 
 private:
 	std::unique_ptr<TrayIcon> trayIcon;

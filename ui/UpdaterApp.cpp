@@ -2,6 +2,8 @@
 #include "UpdateDlg.h"
 #include "DownloadDlg.h"
 
+#include "lib/Utils.h"
+
 #include <wx/msgdlg.h> 
 #include <wx/xrc/xmlres.h>
 #include <wx/fileconf.h>
@@ -9,6 +11,8 @@
 #include <wx/stdpaths.h>
 #include <wx/dir.h>
 #include <wx/socket.h>
+
+#include <boost/algorithm/string/join.hpp>
 
 #ifdef __WXMSW__
 	#include "Shellapi.h"
@@ -44,6 +48,9 @@ bool UpdaterApp::OnInit()
 
 	Bind(wxEVT_RESTART_AND_UPDATE, &UpdaterApp::OnRestartAndUpdate, this);
 	Bind(wxEVT_SHOW_NOTIFICATION, &UpdaterApp::OnShowNotification, this);
+
+
+	LogOwnerInfo();
 
 	if(do_test)
 	{
@@ -323,6 +330,18 @@ wxString UpdaterApp::GetUpdateDeltaString() const
 {
 	wxTimeSpan delta = dlg->GetTimeToNextUpdate();
 	return delta.Format(L"Next check updates in %H:%M:%S");
+}
+
+void UpdaterApp::LogOwnerInfo() const
+{
+	wxString owner =  GetCurrentProcessOwner();
+	std::vector<wxString> groups =  GetCurrentProccessOwnerGroups();
+
+	wxLogMessage(L"Process owner: %s [%s]", owner, boost::join(groups, L", "));
+
+	#ifdef __WXMSW__
+		if(CurrentProcessOwnerAdmin()) {wxLogMessage(L"Process owner has administrator rights");}
+	#endif	
 }
 
 IMPLEMENT_APP(UpdaterApp)

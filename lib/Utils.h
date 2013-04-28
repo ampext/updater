@@ -1,6 +1,9 @@
 #pragma once
 
 #include <exception>
+#include <vector>
+#include <map>
+
 #include <wx/fileconf.h>
 
 class Exception : public std::exception
@@ -39,3 +42,25 @@ template <class T> T ReadConfigValue(wxConfigBase *cfg, const wxString &path, co
 
 	return value;	
 }
+
+struct SimpleAccessRights
+{
+	bool allowedRead;
+	bool allowedWrite;
+	bool allowedModify;
+	bool allowedExecute;
+
+	bool deniedRead;
+	bool deniedWrite;
+	bool deniedModify;
+	bool deniedExecute;
+
+	SimpleAccessRights();
+	wxString ToShortString() const;
+};
+
+wxString GetCurrentProcessOwner();
+std::vector<wxString> GetCurrentProccessOwnerGroups();
+
+bool CurrentProcessOwnerAdmin();
+bool GetFilePermissions(const wxString &filename, wxString &owner, wxString &group, std::map<wxString, SimpleAccessRights> &permissions);

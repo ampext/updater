@@ -6,4 +6,9 @@ set(SRCS Updater.cpp ProcessUtils.cpp Utils.cpp AppInfoProvider.cpp Url.cpp)
 
 add_definitions(-DBUILD_NUMBER=${BUILD_NUMBER})
 add_library(updater ${SRCS})
+
+if(WIN32)
+	target_link_libraries(updater Netapi32.lib)
+endif(WIN32)
+
 target_link_libraries(updater ${wxWidgets_LIBRARIES} ${CURL_LIBRARIES})
