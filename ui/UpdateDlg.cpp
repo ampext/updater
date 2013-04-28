@@ -137,7 +137,9 @@ wxWindow *UpdateDlg::CreateSettingsPage(wxWindow *parent)
 			event.Skip();
 		});
 	}
-	sizer->Add(subSizer, 0, wxALL | wxEXPAND, 5);
+	sizer->Add(subSizer, 0, wxALL | wxEXPAND, 0);
+
+	sizer->Add(permCheck = new wxCheckBox(panel, wxID_ANY, L"Print file permissions to the log when file copying failed"), 0, wxALL | wxEXPAND, 5);
 
 	Connect(wxID_ANY, wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(UpdateDlg::OnSettingsCheckBox));
 	Connect(wxID_ANY, wxEVT_COMMAND_SPINCTRL_UPDATED, wxSpinEventHandler(UpdateDlg::OnSettingsSpinCtrl));
@@ -189,6 +191,7 @@ void UpdateDlg::OnApply(wxCommandEvent& event)
 	updateParams.autoCheckInterval = updSpin->GetValue();
 	updateParams.autoTerminateApp = atCheck->GetValue();
 	updateParams.autoTerminateAppInterval = atSpin->GetValue();
+	updateParams.logPermissions = permCheck->GetValue();
 
 	EnableApplyButton(false);
 }
@@ -379,7 +382,7 @@ void UpdateDlg::OnSettingsCheckBox(wxCommandEvent &event)
 {
 	int id = event.GetId();
 
-	if(id == hideCheck->GetId() || id == autoCheck->GetId() || id == notifyCheck->GetId() || id == startCheck->GetId() || id == atCheck->GetId())
+	if(id == hideCheck->GetId() || id == autoCheck->GetId() || id == notifyCheck->GetId() || id == startCheck->GetId() || id == atCheck->GetId() ||	id == permCheck->GetId())
 		EnableApplyButton(TestUpdateSettingsForChanges());
 
 	event.Skip();
@@ -441,6 +444,7 @@ void UpdateDlg::LoadUpdateSettings(UpdateParams &params)
 	params.autoCheckInterval = ReadConfigValue(cfg, L"/AutoCheckInterval", 5);
 	params.autoTerminateApp = ReadConfigValue(cfg, L"/AutoTerminateApp", true);
 	params.autoTerminateAppInterval = ReadConfigValue(cfg, L"/AutoTerminateAppInterval", 30);
+	params.logPermissions = ReadConfigValue(cfg, L"/LogPermissions", false);
 }
 
 void UpdateDlg::ApplyUpdateSettings(const UpdateParams &params)
@@ -452,6 +456,7 @@ void UpdateDlg::ApplyUpdateSettings(const UpdateParams &params)
 	updSpin->SetValue(params.autoCheckInterval);
 	atCheck->SetValue(params.autoTerminateApp);
 	atSpin->SetValue(params.autoTerminateAppInterval);
+	permCheck->SetValue(params.logPermissions);
 
 	wxQueueEvent(autoCheck, new wxCommandEvent(wxEVT_COMMAND_CHECKBOX_CLICKED, autoCheck->GetId()));
 	wxQueueEvent(atCheck, new wxCommandEvent(wxEVT_COMMAND_CHECKBOX_CLICKED, atCheck->GetId()));
@@ -467,7 +472,8 @@ bool UpdateDlg::TestUpdateSettingsForChanges()
 		autoCheck->GetValue() != updateParams.autoCheckUpdates ||
 		updSpin->GetValue() != static_cast<int>(updateParams.autoCheckInterval) ||
 		atCheck->GetValue() != updateParams.autoTerminateApp ||
-		atSpin->GetValue() != static_cast<int>(updateParams.autoTerminateAppInterval)) return true;
+		atSpin->GetValue() != static_cast<int>(updateParams.autoTerminateAppInterval) ||
+		permCheck->GetValue() != updateParams.logPermissions) return true;
 
 	return false;
 }
@@ -514,6 +520,7 @@ void UpdateDlg::SaveUpdateSettings(const UpdateParams &params)
 	cfg->Write(L"/AutoCheckInterval", params.autoCheckInterval);
 	cfg->Write(L"/AutoTerminateApp", params.autoTerminateApp);
 	cfg->Write(L"/AutoTerminateAppInterval", params.autoTerminateAppInterval);
+	cfg->Write(L"/LogPermissions", params.logPermissions);
 }
 
 void UpdateDlg::SaveDialogSettings()

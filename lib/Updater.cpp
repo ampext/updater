@@ -9,6 +9,7 @@
 #include <wx/wfstream.h>
 #include <wx/zipstrm.h>
 #include <wx/filename.h>
+#include <wx/fileconf.h>
 #include <wx/regex.h>
 
 #include <boost/uuid/sha1.hpp>
@@ -223,6 +224,8 @@ bool Updater::ExtractFilesFromZip(const wxString &srcPath, const wxString &dstPa
 		wxMkDir(dstPath, wxS_DIR_DEFAULT);
 	}
 
+	bool logPermission = ReadConfigValue(wxConfigBase::Get(), L"/LogPermissions", true);
+
 	size_t cntr = 0;
 	size_t total = zipStream.GetTotalEntries();
 
@@ -250,10 +253,28 @@ bool Updater::ExtractFilesFromZip(const wxString &srcPath, const wxString &dstPa
 			if(!wxDirExists(filePath)) wxMkDir(filePath, wxS_DIR_DEFAULT);
 
 			wxFileOutputStream dstStream(fileName);
+
+			//wxLogMessage(L"Extracting '%s' to '%s'", entryName, fileName);
  
 			if(!dstStream.IsOk())
 			{
 				wxLogError(L"Can not open file '%s'", fileName);
+
+				if(logPermission)
+				{
+					wxString owner, group;
+					std::map<wxString, SimpleAccessRights> permissions;
+
+					GetFilePermissions(fileName, owner, group, permissions);
+
+					wxLogMessage(L"File permissions");
+					wxLogMessage(L"Owner: %s", owner);
+					//wxLogMessage(L"Group: %s", group);
+
+					for(auto it = permissions.begin(); it != permissions.end(); it++)
+						wxLogMessage(L"%s: %s", it->first, it->second.ToShortString());
+				}
+
 				return false;
 			}
 

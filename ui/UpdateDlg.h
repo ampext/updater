@@ -37,6 +37,7 @@ private:
 		unsigned int autoCheckInterval;
 		bool autoTerminateApp;
 		unsigned int autoTerminateAppInterval;
+		bool logPermissions;
 
 		UpdateParams()
 		{
@@ -47,6 +48,7 @@ private:
 			autoCheckInterval = 0;
 			autoTerminateApp = true;
 			autoTerminateAppInterval = 30;
+			logPermissions = false;
 		}
 
 	} updateParams;
@@ -99,6 +101,7 @@ private:
 	wxCheckBox *atCheck;
 	wxSpinCtrl *updSpin;
 	wxSpinCtrl *atSpin;
+	wxCheckBox *permCheck;
 
 	UpdaterProvider updProvider;
 	TargetAppProvider appProvider;
