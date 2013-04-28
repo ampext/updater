@@ -332,7 +332,7 @@ std::vector<wxString> GetCurrentProccessOwnerGroups()
 	return std::vector<wxString>();
 }
 
-bool GetFilePermissions(const wxString &filename, wxString &owner, wxString &group)
+bool GetFilePermissions(const wxString &filename, wxString &owner, wxString &group, std::map<wxString, SimpleAccessRights> &permissions)
 {
 	return false;
 }
