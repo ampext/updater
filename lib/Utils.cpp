@@ -11,27 +11,6 @@
 #include <windows.h>
 #include <lm.h>
 
-SimpleAccessRights::SimpleAccessRights() : allowedRead(false), allowedWrite(false), allowedModify(false),
-	deniedRead(false), deniedWrite(false), deniedModify(false)
-{
-
-}
-
-wxString SimpleAccessRights::ToShortString() const
-{
-	wxString str;
-
-	bool read = allowedRead & ~deniedRead;
-	bool write = allowedWrite & ~deniedWrite;
-	bool execute = allowedExecute & ~deniedExecute;
-
-	str += read ? L"r" : L"-";
-	str += write ? L"w" : L"-";
-	str += execute ? L"x" : L"-";
-
-	return str;
-}
-
 std::pair<wxString, wxString> LookupSid(PSID pSid)
 {
 	std::pair<wxString, wxString> result;
@@ -338,3 +317,24 @@ bool GetFilePermissions(const wxString &filename, wxString &owner, wxString &gro
 }
 
 #endif
+
+SimpleAccessRights::SimpleAccessRights() : allowedRead(false), allowedWrite(false), allowedModify(false),
+	deniedRead(false), deniedWrite(false), deniedModify(false)
+{
+
+}
+
+wxString SimpleAccessRights::ToShortString() const
+{
+	wxString str;
+
+	bool read = allowedRead & ~deniedRead;
+	bool write = allowedWrite & ~deniedWrite;
+	bool execute = allowedExecute & ~deniedExecute;
+
+	str += read ? L"r" : L"-";
+	str += write ? L"w" : L"-";
+	str += execute ? L"x" : L"-";
+
+	return str;
+}

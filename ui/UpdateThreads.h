@@ -66,7 +66,7 @@ private:
 class DownloadThread : public wxThread
 {
 public:
-	DownloadThread(wxThreadKind kind = wxTHREAD_DETACHED, wxEvtHandler *handler = nullptr, AppInfoProvider *appProvider = nullptr);
+	DownloadThread(wxThreadKind kind = wxTHREAD_DETACHED, wxEvtHandler *handler = nullptr, const AppInfoProvider *appProvider = nullptr);
 
 private:
 	ExitCode Entry();

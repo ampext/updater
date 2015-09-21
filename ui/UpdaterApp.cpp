@@ -231,7 +231,7 @@ bool UpdaterApp::CopyToTmpAndExec()
 {
 	wxString tmpFilePath = wxFileName::GetTempDir() + wxFileName::GetPathSeparator() + L"updater" + wxFileName::GetPathSeparator();
 	wxFileName tmpUpdFileName(tmpFilePath + L"upd_ui.exe");
-	wxFileName localUpdFileName(wxStandardPaths().GetExecutablePath());
+	wxFileName localUpdFileName(wxStandardPaths::Get().GetExecutablePath());
 
 	if(!wxDirExists(tmpFilePath))
 	{
@@ -268,7 +268,7 @@ bool UpdaterApp::CopyToTmpAndExec()
 bool UpdaterApp::ExecuteOriginal(const wxString &path)
 {
 	wxFileName updFileName(path +  wxFileName::GetPathSeparator() + L"upd_ui.exe");
-	wxString cmd_line = wxString::Format(L"--postupdate=%s", wxStandardPaths().GetExecutablePath());
+	wxString cmd_line = wxString::Format(L"--postupdate=%s", wxStandardPaths::Get().GetExecutablePath());
 
 	wxLogMessage(L"Executing %s with %s", updFileName.GetFullPath(), cmd_line);
 

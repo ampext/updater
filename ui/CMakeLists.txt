@@ -2,7 +2,12 @@ cmake_minimum_required(VERSION 2.8)
 
 project(upd_ui)
 
-set(SRCS UpdaterApp.cpp UpdateDlg.cpp WaitDlg.cpp UpdateThreads.cpp Tray.cpp DownloadPanel.cpp DownloadDlg.cpp DataViewBitmapRenderer.cpp Updater.rc)
+set(SRCS UpdaterApp.cpp UpdateDlg.cpp WaitDlg.cpp UpdateThreads.cpp Tray.cpp DownloadPanel.cpp DownloadDlg.cpp DataViewBitmapRenderer.cpp)
+
+if (WIN32)
+    set(SRCS ${SRCS} Updater.rc)
+endif()
+
 wxwidgets_add_resources(SRCS Updater.xrc OPTIONS -c -v -o Resource.cpp)
 
 if(NOT WIN_SUBSYSTEM)

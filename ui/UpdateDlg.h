@@ -86,6 +86,8 @@ private:
 	void SaveDialogSettings();
 	void ApplyUpdateSettings(const UpdateParams &params);
 
+	bool CheckAppProvidersStatus() const;
+
 	wxTimer *timer;
 	wxDateTime timerStartTime;
 
@@ -104,7 +106,7 @@ private:
 	wxCheckBox *permCheck;
 
 	UpdaterProvider updProvider;
-	TargetAppProvider appProvider;
+	std::vector<TargetAppProvider> appProviders;
 
 	bool ready_to_autoupdate;
 	bool ready_to_install;

@@ -9,7 +9,7 @@
 
 #define wxLOG_COMPONENT "ui"
 
-DownloadDlg::DownloadDlg(wxWindow *parent, wxWindowID id, AppInfoProvider *appProvider, const wxString &title) : wxDialog(parent, id, title, wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
+DownloadDlg::DownloadDlg(wxWindow *parent, wxWindowID id, const AppInfoProvider *appProvider, const wxString &title) : wxDialog(parent, id, title, wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
 {
 	termTimer = nullptr;
 

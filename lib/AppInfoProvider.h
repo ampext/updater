@@ -16,10 +16,6 @@ public:
 	virtual wxString GetUpdateURL() const = 0;
 
 	bool operator !() const	{ return !IsOk(); }
-	virtual void Reset() {};
-
-protected:
-	std::map<wxString, wxString> GetProperties(const wxString& name);
 };
 
 class UpdaterProvider : public AppInfoProvider
@@ -29,14 +25,14 @@ private:
 	wxString updateURL;
 
 public:
-	UpdaterProvider(const wxString &installDir = wxEmptyString, const wxString &updateURL = wxEmptyString);
+	UpdaterProvider(const wxString &installPath = wxEmptyString, const wxString &updateURL = wxEmptyString);
+	UpdaterProvider(const std::map<wxString, wxString> &props);
 
 	wxString GetName() const;
 	wxString GetProcName() const;
 	wxString GetLocalVersion() const;
 	bool IsOk() const;
 	wxString GetInstallDir() const;
-	void Reset();
 
 	wxString GetUpdateURL() const;
 };
@@ -44,14 +40,14 @@ public:
 class TargetAppProvider : public AppInfoProvider
 {
 public:
-	TargetAppProvider();
+	TargetAppProvider() {}
+	TargetAppProvider(const std::map<wxString, wxString> &props, const wxString &targetName = wxEmptyString);
 
 	wxString GetName() const;
 	wxString GetProcName() const;
 	wxString GetLocalVersion() const;
 	bool IsOk() const;
 	wxString GetInstallDir() const;
-	void Reset();
 
 	wxString GetUpdateURL() const;
 
@@ -61,3 +57,5 @@ private:
 	wxString installDir;
 	wxString updateURL;
 };
+
+bool ReadProviders(UpdaterProvider &updProvider, std::vector<TargetAppProvider> &targetProviders);

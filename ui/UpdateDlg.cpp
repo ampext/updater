@@ -47,6 +47,7 @@ UpdateDlg::UpdateDlg(wxWindow *parent) : wxDialog(parent, wxID_ANY, L"Updates", 
 	SetSize(wxSize(480, 300));
 
 	LoadSettings();
+	ReadProviders(updProvider, appProviders);
 
 	if(startCheck->GetValue()) CheckUpdates();
 }
@@ -218,9 +219,12 @@ void UpdateDlg::OnCheckThreadCompleted(CheckThreadEvent& event)
 
 	ready_to_autoupdate = ready_to_install = false;
 
+	if(info.size() != appProviders.size() + 1)
+		return;
+
 	for(size_t i = 0; i < info.size(); ++i)
 	{
-		AppInfoProvider *infoProvider = (i == 0 ? static_cast<AppInfoProvider *>(&updProvider) : static_cast<AppInfoProvider *>(&appProvider));
+		AppInfoProvider *infoProvider = (i == 0 ? dynamic_cast<AppInfoProvider *>(&updProvider) : dynamic_cast<AppInfoProvider *>(&appProviders.at(i - 1)));
 
 		wxVector<wxVariant> list_row_data;
 
@@ -281,8 +285,14 @@ void UpdateDlg::OnCheckThreadCompleted(CheckThreadEvent& event)
 		if(ready_to_install && info.size() > 1)
 		{
 			if(!notify_text.IsEmpty()) notify_text += L"\n";
-			if(appProvider.GetLocalVersion().IsEmpty()) notify_text += wxString::Format(L"%s (%s)", appProvider.GetName(), info[1].app_version);
-			else notify_text += wxString::Format(L"%s (%s -> %s)", appProvider.GetName(), appProvider.GetLocalVersion(), info[1].app_version);
+
+			for(size_t i = 0; i < appProviders.size(); i++)
+			{
+				const AppInfoProvider &appProvider = appProviders[i];
+
+				if(appProvider.GetLocalVersion().IsEmpty()) notify_text += wxString::Format(L"%s (%s)", appProvider.GetName(), info[i + 1].app_version);
+				else notify_text += wxString::Format(L"%s (%s -> %s)", appProvider.GetName(), appProvider.GetLocalVersion(), info[i + 1].app_version);
+			}
 		}
 
 		wxCommandEvent *cmdEvent = new wxCommandEvent(wxEVT_SHOW_NOTIFICATION);
@@ -292,14 +302,34 @@ void UpdateDlg::OnCheckThreadCompleted(CheckThreadEvent& event)
 	}
 }
 
+bool UpdateDlg::CheckAppProvidersStatus() const
+{
+	bool res = true;
+
+	for(const AppInfoProvider &appProvider: appProviders)
+	{
+		if(!appProvider.IsOk())
+		{
+			res = false;
+			wxLogWarning(wxString::Format(L"Application provider '%s' is not OK for checking updates", appProvider.GetName()));
+		}
+	}
+
+	return res;
+}
+
 void UpdateDlg::CheckUpdates()
 {
 	wxLogMessage(L"Checking updates");
 
 	if(!updProvider.IsOk()) {wxLogWarning(L"Updater provider is not OK for checking updates");}
-	if(!appProvider.IsOk()) {wxLogWarning(L"Application provider is not OK for checking updates");}
 
-	std::vector<wxString> urls = {updProvider.GetUpdateURL(), appProvider.GetUpdateURL()};
+	CheckAppProvidersStatus();
+
+	std::vector<wxString> urls = {updProvider.GetUpdateURL()};
+
+	for(const AppInfoProvider &appProvider: appProviders)
+		urls.push_back(appProvider.GetUpdateURL());
 
 	CheckThread *thread = new CheckThread(this, urls);
 	if(thread->Create() != wxTHREAD_NO_ERROR || thread->Run() != wxTHREAD_NO_ERROR)
@@ -355,26 +385,29 @@ void UpdateDlg::OnInstallUpdates(wxCommandEvent& event)
 
 	if(ready_to_install)
 	{
-		if(!appProvider.IsOk())
-		{
-			wxLogWarning(L"Application provider is not OK for installing updates");
+		if(!CheckAppProvidersStatus())
 			return;
-		}
 
-		DownloadDlg dlg(this, DOWNLOAD_DLG, &appProvider, L"Installing updates");
-		int res = dlg.ShowModal();
-
-		if(res == DownloadDlg::UPDATE_OK)
+		for(const AppInfoProvider &appProvider: appProviders)
 		{
-			wxMessageBox(L"Update(s) successfully installed", L"Information");
-			installButton->Enable(false);
+			bool enableInstall = false;
 
-			appProvider.Reset();
+			DownloadDlg dlg(this, DOWNLOAD_DLG, &appProvider, L"Installing updates");
+			int res = dlg.ShowModal();
+
+			if(res == DownloadDlg::UPDATE_OK)
+			{
+				wxMessageBox(L"Update(s) successfully installed", L"Information");
+				enableInstall = true;
+			}
+			else if(res == DownloadDlg::UPDATE_CANCEL) wxMessageBox(L"Update canceled", L"Information", wxICON_WARNING | wxOK | wxCENTER);
+			else if(res == DownloadDlg::UPDATE_FAIL) wxMessageBox(L"Update failed", L"Information", wxICON_ERROR | wxOK | wxCENTER);
+
+			installButton->Enable(enableInstall);
+
+			ReadProviders(updProvider, appProviders);
 			CheckUpdates();
 		}
-		else if(res == DownloadDlg::UPDATE_CANCEL) wxMessageBox(L"Update canceled", L"Information", wxICON_WARNING | wxOK | wxCENTER);
-		else if(res == DownloadDlg::UPDATE_FAIL) wxMessageBox(L"Update failed", L"Information", wxICON_ERROR | wxOK | wxCENTER);
-
 	}
 }
 

@@ -38,7 +38,7 @@ wxThread::ExitCode CheckThread::Entry()
 	return 0;
 }
 
-DownloadThread::DownloadThread(wxThreadKind kind, wxEvtHandler *handler, AppInfoProvider *appProvider) : wxThread(kind), handler(handler)
+DownloadThread::DownloadThread(wxThreadKind kind, wxEvtHandler *handler, const AppInfoProvider *appProvider) : wxThread(kind), handler(handler)
 {
 	url = appProvider->GetUpdateURL();
 	installPath = appProvider->GetInstallDir();

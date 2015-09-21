@@ -15,7 +15,7 @@ public:
 	static const int UPDATE_CANCEL = 1;
 	static const int UPDATE_FAIL = 2;
 
-	DownloadDlg(wxWindow *parent = nullptr, wxWindowID id = wxID_ANY, AppInfoProvider *appProvider = nullptr, const wxString &title = L"Downloading..."); 
+	DownloadDlg(wxWindow *parent = nullptr, wxWindowID id = wxID_ANY, const AppInfoProvider *appProvider = nullptr, const wxString &title = L"Downloading..."); 
 
 private:
 	void OnClose(wxCloseEvent &event);

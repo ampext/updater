@@ -9,11 +9,40 @@
 
 #define wxLOG_COMPONENT "updater"
 
-std::map<wxString, wxString> AppInfoProvider::GetProperties(const wxString& name)
+std::map<wxString, wxString> ReadProperties(wxXmlNode *appNode)
 {
 	std::map<wxString, wxString> props;
 
-	wxFileName updFileName(wxStandardPaths().GetExecutablePath());
+
+	wxXmlNode *propertyNode = appNode->GetChildren();
+
+	while(propertyNode)
+	{
+		if(propertyNode->GetName() == L"property")
+		{
+			wxString prop_name;
+			wxString prop_value;
+
+			propertyNode->GetAttribute(L"name", &prop_name);
+			propertyNode->GetAttribute(L"value", &prop_value);
+
+			if(prop_name.IsEmpty())
+			{
+				wxLogWarning(L"Empty property name at %d line", propertyNode->GetLineNumber());
+			}
+
+			props[prop_name] = prop_value;
+		}
+
+		propertyNode = propertyNode->GetNext();
+	}
+
+	return props;
+}
+
+bool ReadProviders(UpdaterProvider &updProvider, std::vector<TargetAppProvider> &targetProviders)
+{
+	wxFileName updFileName(wxStandardPaths::Get().GetExecutablePath());
 	wxFileName providersFileName(updFileName.GetPath() + wxFileName::GetPathSeparator() + L"providers.xml");
 
 	try
@@ -28,62 +57,44 @@ std::map<wxString, wxString> AppInfoProvider::GetProperties(const wxString& name
 
 		wxXmlNode *appNode = node->GetChildren();
 		
-		while(appNode && appNode->GetName() == L"app")
+		while(appNode)
 		{
-			wxString app_name;
-			appNode->GetAttribute(L"name", &app_name);
-
-			if(app_name == name)
+			if(appNode->GetName() == L"app")
 			{
-				wxXmlNode *propertyNode = appNode->GetChildren();
+				wxString app_name = appNode->GetAttribute(L"name");
+				std::map<wxString, wxString> props = ReadProperties(appNode);
 
-				while(propertyNode && propertyNode->GetName() == L"property")
-				{
-					wxString prop_name;
-					wxString prop_value;
-
-					propertyNode->GetAttribute(L"name", &prop_name);
-					propertyNode->GetAttribute(L"value", &prop_value);
-
-					if(prop_name.IsEmpty())
-					{
-						wxLogWarning(L"Empty property name at %d line", propertyNode->GetLineNumber());
-					}
-
-					props[prop_name] = prop_value;
-
-					propertyNode = propertyNode->GetNext();
-				}
+				if(app_name == "Updater") updProvider = UpdaterProvider(props);
+				else targetProviders.push_back(TargetAppProvider(props, app_name));
 			}
-			
+
 			appNode = appNode->GetNext();
 		}
 	}
 	catch(Exception &e)
 	{
 		wxLogError(e.GetDescription());
+		return false;
 	}
 
-	return props;
+	return true;
 }
 
-UpdaterProvider::UpdaterProvider(const wxString &installPath, const wxString &updateURL) : installPath(installPath), updateURL(updateURL)
+UpdaterProvider::UpdaterProvider(const wxString &installPath, const wxString &updateURL): installPath(installPath), updateURL(updateURL)
+{
+
+}
+
+UpdaterProvider::UpdaterProvider(const std::map<wxString, wxString> &props)
 {
 	if(updateURL.IsEmpty())
 	{
-		std::map<wxString, wxString> props = GetProperties(UpdaterProvider::GetName());
-
-		if(props.count(L"update_url")) this->updateURL = props[L"update_url"];
+		if(props.count(L"update_url")) this->updateURL = props.find(L"update_url")->second;
 		else
 		{
 			wxLogError(L"Can not find '%s' property for updater", L"update_url");
 		}
 	}
-}
-
-void UpdaterProvider::Reset()
-{
-
 }
 
 wxString UpdaterProvider::GetName() const
@@ -111,7 +122,7 @@ wxString UpdaterProvider::GetLocalVersion() const
 
 bool UpdaterProvider::IsOk() const
 {
-	return true;
+	return !updateURL.IsEmpty();
 }
 
 wxString UpdaterProvider::GetInstallDir() const
@@ -124,28 +135,18 @@ wxString UpdaterProvider::GetUpdateURL() const
 	return updateURL;
 }
 
-TargetAppProvider::TargetAppProvider()
+TargetAppProvider::TargetAppProvider(const std::map<wxString, wxString> &props, const  wxString &appName): appName(appName)
 {
-	Reset();
-}
-
-void TargetAppProvider::Reset()
-{
-	std::map<wxString, wxString> props = GetProperties(L"Application");
-
 	try
 	{
-		if(props.count(L"process_name")) procName = props[L"process_name"];
+		if(props.count(L"process_name")) procName = props.find(L"process_name")->second;
 		else throw Exception(L"process_name");
 
-		if(props.count(L"update_url")) updateURL = props[L"update_url"];
+		if(props.count(L"update_url")) updateURL = props.find(L"update_url")->second;
 		else throw Exception(L"update_url");
 
-		if(props.count(L"install_dir")) installDir = props[L"install_dir"];
+		if(props.count(L"install_dir")) installDir = props.find(L"install_dir")->second;
 		else throw Exception(L"install_dir");
-
-		if(props.count(L"app_name")) appName = props[L"app_name"];
-		else appName = L"Application";
 	}
 	catch(Exception &e)
 	{
