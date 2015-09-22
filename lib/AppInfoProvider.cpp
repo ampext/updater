@@ -137,16 +137,19 @@ wxString UpdaterProvider::GetUpdateURL() const
 
 TargetAppProvider::TargetAppProvider(const std::map<wxString, wxString> &props, const  wxString &appName): appName(appName)
 {
+	auto readProperty = [props](const wxString &name)
+	{
+		auto it =  props.find(name);
+		if(it == props.end()) throw Exception(name);
+
+		return it->second;
+	};
+
 	try
 	{
-		if(props.count(L"process_name")) procName = props.find(L"process_name")->second;
-		else throw Exception(L"process_name");
-
-		if(props.count(L"update_url")) updateURL = props.find(L"update_url")->second;
-		else throw Exception(L"update_url");
-
-		if(props.count(L"install_dir")) installDir = props.find(L"install_dir")->second;
-		else throw Exception(L"install_dir");
+		procName = readProperty(L"process_name");
+		updateURL = readProperty(L"update_url");
+		installDir = readProperty(L"install_dir");
 	}
 	catch(Exception &e)
 	{

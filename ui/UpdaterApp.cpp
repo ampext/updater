@@ -96,7 +96,7 @@ void UpdaterApp::OnInitCmdLine(wxCmdLineParser &parser)
 		{wxCMD_LINE_SWITCH, "f", "force", "force autoupdate", wxCMD_LINE_VAL_NONE, 0},
 		{wxCMD_LINE_OPTION, "p", "postupdate", "autoupdate destination", wxCMD_LINE_VAL_STRING, 0},
 		{wxCMD_LINE_PARAM, "", "", "update url", wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL},
-		//{wxCMD_LINE_SWITCH, "t", "test", "test", wxCMD_LINE_VAL_NONE, 0},
+		{wxCMD_LINE_SWITCH, "t", "test", "test", wxCMD_LINE_VAL_NONE, 0},
 		{wxCMD_LINE_NONE}
 	};
 

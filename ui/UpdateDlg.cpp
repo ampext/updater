@@ -210,8 +210,15 @@ void UpdateDlg::OnClose(wxCloseEvent &event)
 
 void UpdateDlg::OnCheckThreadCompleted(CheckThreadEvent& event)
 {
-	wxWindow *waitWindow = FindWindow(WAIT_DLG);
-	if(waitWindow) wxQueueEvent(FindWindow(WAIT_DLG), new wxCloseEvent(wxEVT_CLOSE_WINDOW, WAIT_DLG));
+	wxLogMessage(L"Checking updates finished");
+
+	wxWindow *waitWindow = FindWindowById(WAIT_DLG);
+
+	if(waitWindow) wxQueueEvent(waitWindow, new wxCloseEvent(wxEVT_CLOSE_WINDOW, WAIT_DLG));
+	else
+	{
+		wxLogWarning(L"Can not find WaitDlg window");
+	}
 
 	const std::vector<UpdateInfo> &info = event.GetInfo();
 
