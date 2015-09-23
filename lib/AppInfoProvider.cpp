@@ -13,7 +13,6 @@ std::map<wxString, wxString> ReadProperties(wxXmlNode *appNode)
 {
 	std::map<wxString, wxString> props;
 
-
 	wxXmlNode *propertyNode = appNode->GetChildren();
 
 	while(propertyNode)
@@ -44,6 +43,8 @@ bool ReadProviders(UpdaterProvider &updProvider, std::vector<TargetAppProvider> 
 {
 	wxFileName updFileName(wxStandardPaths::Get().GetExecutablePath());
 	wxFileName providersFileName(updFileName.GetPath() + wxFileName::GetPathSeparator() + L"providers.xml");
+
+	targetProviders.clear();
 
 	try
 	{

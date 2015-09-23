@@ -222,6 +222,11 @@ void UpdateDlg::OnCheckThreadCompleted(CheckThreadEvent& event)
 
 	const std::vector<UpdateInfo> &info = event.GetInfo();
 
+	for(int i = 0; i < info.size(); i++)
+	{
+		if (info[i].IsOk()) {wxLogMessage(wxString::Format("%s -> %s", info[i].app_name, info[i].app_version));}
+	}
+
 	updListCtrl->DeleteAllItems();
 
 	ready_to_autoupdate = ready_to_install = false;
@@ -395,26 +400,24 @@ void UpdateDlg::OnInstallUpdates(wxCommandEvent& event)
 		if(!CheckAppProvidersStatus())
 			return;
 
+		bool enableInstall = false;
+
 		for(const AppInfoProvider &appProvider: appProviders)
 		{
-			bool enableInstall = false;
-
 			DownloadDlg dlg(this, DOWNLOAD_DLG, &appProvider, L"Installing updates");
 			int res = dlg.ShowModal();
 
-			if(res == DownloadDlg::UPDATE_OK)
-			{
-				wxMessageBox(L"Update(s) successfully installed", L"Information");
-				enableInstall = true;
-			}
+			enableInstall |= (res != DownloadDlg::UPDATE_OK);
+
+			if(res == DownloadDlg::UPDATE_OK) wxMessageBox(L"Update(s) successfully installed", L"Information");
 			else if(res == DownloadDlg::UPDATE_CANCEL) wxMessageBox(L"Update canceled", L"Information", wxICON_WARNING | wxOK | wxCENTER);
 			else if(res == DownloadDlg::UPDATE_FAIL) wxMessageBox(L"Update failed", L"Information", wxICON_ERROR | wxOK | wxCENTER);
-
-			installButton->Enable(enableInstall);
-
-			ReadProviders(updProvider, appProviders);
-			CheckUpdates();
 		}
+
+		installButton->Enable(enableInstall);
+
+		ReadProviders(updProvider, appProviders);
+		CheckUpdates();
 	}
 }
 
