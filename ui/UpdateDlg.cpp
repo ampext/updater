@@ -222,7 +222,7 @@ void UpdateDlg::OnCheckThreadCompleted(CheckThreadEvent& event)
 
 	const std::vector<UpdateInfo> &info = event.GetInfo();
 
-	for(int i = 0; i < info.size(); i++)
+	for(size_t i = 0; i < info.size(); i++)
 	{
 		if (info[i].IsOk()) {wxLogMessage(wxString::Format("%s -> %s", info[i].app_name, info[i].app_version));}
 	}
