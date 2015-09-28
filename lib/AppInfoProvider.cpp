@@ -138,17 +138,21 @@ wxString UpdaterProvider::GetUpdateURL() const
 
 TargetAppProvider::TargetAppProvider(const std::map<wxString, wxString> &props, const  wxString &appName): appName(appName)
 {
-	auto readProperty = [props](const wxString &name)
+	auto readProperty = [props](const wxString &name, bool throwException = true) -> wxString
 	{
 		auto it =  props.find(name);
-		if(it == props.end()) throw Exception(name);
+		if(it == props.end())
+		{
+			if(throwException) throw Exception(name);
+			return wxEmptyString;
+		}
 
 		return it->second;
 	};
 
 	try
 	{
-		procName = readProperty(L"process_name");
+		procName = readProperty(L"process_name", false);
 		updateURL = readProperty(L"update_url");
 		installDir = readProperty(L"install_dir");
 	}
@@ -186,6 +190,7 @@ wxString TargetAppProvider::GetLocalVersion() const
 
 bool TargetAppProvider::IsOk() const
 {
+	if (GetProcName().IsEmpty()) return wxDirExists(GetInstallDir());
 	return wxFileExists(GetInstallDir() +  wxFileName::GetPathSeparator() + GetProcName());
 }
 

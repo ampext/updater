@@ -67,6 +67,8 @@ wxWindow *UpdateDlg::CreateUpdatesPage(wxWindow *parent)
 	updListCtrl->AppendTextColumn(L"Version");
 	updListCtrl->AppendTextColumn(L"Size");
 
+	updListCtrl->Bind(wxEVT_DATAVIEW_SELECTION_CHANGED, &UpdateDlg::OnUpdateListSelectionChanged, this);
+
 	columnsIds = {L"StatusColumn", L"NameColumn", L"LocalVersionColumn", L"UpdateVersionColumn", L"SizeColumn"};
 
 	sizer->Add(updListCtrl, 1, wxALL | wxEXPAND, 5);
@@ -76,11 +78,13 @@ wxWindow *UpdateDlg::CreateUpdatesPage(wxWindow *parent)
 		subSizer->Add(lastUpdLabel = new wxStaticText(panel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxST_ELLIPSIZE_END | wxST_NO_AUTORESIZE | wxALIGN_LEFT), 1, wxALL | wxALIGN_CENTER_VERTICAL, 5);
 		subSizer->Add(updButton = new wxButton(panel, wxID_ANY, L"Check for updates..."), 0, wxALL | wxEXPAND, 5);
 		subSizer->Add(installButton = new wxButton(panel, wxID_ANY, L"Install"), 0, wxALL | wxEXPAND, 5);
+		subSizer->Add(installAllButton = new wxButton(panel, wxID_ANY, L"Install all"), 0, wxALL | wxEXPAND, 5);
 
 		installButton->Enable(false);
 
 		updButton->Bind(wxEVT_COMMAND_BUTTON_CLICKED, &UpdateDlg::OnCheckUpdates, this);
-		installButton->Bind(wxEVT_COMMAND_BUTTON_CLICKED, &UpdateDlg::OnInstallUpdates, this);
+		installButton->Bind(wxEVT_COMMAND_BUTTON_CLICKED, &UpdateDlg::OnInstallUpdate, this);
+		installAllButton->Bind(wxEVT_COMMAND_BUTTON_CLICKED, &UpdateDlg::OnInstallAllUpdates, this);
 	}
 	sizer->Add(subSizer, 0, wxALL | wxEXPAND, 0);
 
@@ -229,7 +233,7 @@ void UpdateDlg::OnCheckThreadCompleted(CheckThreadEvent& event)
 
 	updListCtrl->DeleteAllItems();
 
-	ready_to_autoupdate = ready_to_install = false;
+	readyToUpdate.clear();
 
 	if(info.size() != appProviders.size() + 1)
 		return;
@@ -250,24 +254,28 @@ void UpdateDlg::OnCheckThreadCompleted(CheckThreadEvent& event)
 
 			list_row_data.push_back(wxVariant(wxEmptyString));
 			list_row_data.push_back(wxVariant(wxEmptyString));
+
+			readyToUpdate.push_back(false);
 		}
 		else
 		{
+			bool updFlag = false;
+
 			if(!infoProvider->IsOk()) list_row_data.push_back(wxVariant(wxXmlResource::Get()->LoadBitmap(L"red_cross")));
 			else
 			{
 				if(info[i].app_version > infoProvider->GetLocalVersion())
 				{
 					list_row_data.push_back(wxVariant(wxXmlResource::Get()->LoadBitmap(L"green_check")));
-
-					ready_to_install = true;
-					if(i == 0) ready_to_autoupdate = true;
+					updFlag = true;
 				}
 				else
 				{
 					list_row_data.push_back(wxVariant(wxBitmap()));
 				}
 			}
+
+			readyToUpdate.push_back(updFlag);
 
 			wxString strSize = wxFileName::GetHumanReadableSize(wxULongLong(info[i].GetSize()), wxEmptyString);
 
@@ -287,14 +295,15 @@ void UpdateDlg::OnCheckThreadCompleted(CheckThreadEvent& event)
 	wxConfigBase::Get()->Write(L"/LastChecked", strDate);
 
 	updButton->Enable();
-	installButton->Enable(ready_to_install);
+	installButton->Enable(false);
+	installAllButton->Enable(HasAppUpdates());
 
 	if(notifyCheck->GetValue())
 	{
 		wxString notify_text;
 
-		if(ready_to_autoupdate && info.size() > 0) notify_text = wxString::Format(L"%s (%s -> %s)", updProvider.GetName(), updProvider.GetLocalVersion(), info[0].app_version);
-		if(ready_to_install && info.size() > 1)
+		if(readyToUpdate.at(0) && info.size() > 0) notify_text = wxString::Format(L"%s (%s -> %s)", updProvider.GetName(), updProvider.GetLocalVersion(), info[0].app_version);
+		if(HasAppUpdates() && info.size() > 1)
 		{
 			if(!notify_text.IsEmpty()) notify_text += L"\n";
 
@@ -328,6 +337,18 @@ bool UpdateDlg::CheckAppProvidersStatus() const
 	}
 
 	return res;
+}
+
+bool UpdateDlg::HasAppUpdate(size_t index) const
+{
+	if (index + 1 < readyToUpdate.size()) return readyToUpdate[index + 1];
+	return false;
+}
+
+bool UpdateDlg::HasAppUpdates() const
+{
+	if (readyToUpdate.size() < 2) return false;
+	return std::any_of(readyToUpdate.begin() + 1, readyToUpdate.end(), [](bool val) { return val; });
 }
 
 void UpdateDlg::CheckUpdates()
@@ -384,41 +405,83 @@ void UpdateDlg::OnCheckUpdates(wxCommandEvent& event)
 	dlg.ShowModal();
 }
 
-void UpdateDlg::OnInstallUpdates(wxCommandEvent& event)
+void UpdateDlg::OnUpdateListSelectionChanged(wxDataViewEvent& event)
 {
-	if(ready_to_autoupdate)
+	bool enable = false;
+	int index = updListCtrl->GetSelectedRow();
+
+	if(index == wxNOT_FOUND || index == 0) enable = false;
+	else enable = HasAppUpdate(index - 1);
+
+	installButton->Enable(enable);
+}
+
+bool UpdateDlg::CheckForRestart()
+{
+	if(!readyToUpdate.empty() && readyToUpdate[0])
 	{
 		if(wxMessageBox(L"Need to restart the program. Continue?", L"Update confirmation", wxYES | wxNO) == wxNO)
-			return;
+			return false;
 
 		wxQueueEvent(wxApp::GetInstance(), new wxCommandEvent(wxEVT_RESTART_AND_UPDATE));
-		return;
+		return true;
 	}
 
-	if(ready_to_install)
+	return false;
+}
+
+void UpdateDlg::OnInstallUpdate(wxCommandEvent& event)
+{
+	if(CheckForRestart()) return;
+
+	int index = updListCtrl->GetSelectedRow();
+	if(index == wxNOT_FOUND || index == 0) return;
+
+	const AppInfoProvider &appProvider = appProviders.at(index - 1);
+
+	if(HasAppUpdate(index - 1))
 	{
-		if(!CheckAppProvidersStatus())
-			return;
-
-		bool enableInstall = false;
-
-		for(const AppInfoProvider &appProvider: appProviders)
+		if(!appProvider.IsOk())
 		{
-			DownloadDlg dlg(this, DOWNLOAD_DLG, &appProvider, L"Installing updates");
-			int res = dlg.ShowModal();
-
-			enableInstall |= (res != DownloadDlg::UPDATE_OK);
-
-			if(res == DownloadDlg::UPDATE_OK) wxMessageBox(L"Update(s) successfully installed", L"Information");
-			else if(res == DownloadDlg::UPDATE_CANCEL) wxMessageBox(L"Update canceled", L"Information", wxICON_WARNING | wxOK | wxCENTER);
-			else if(res == DownloadDlg::UPDATE_FAIL) wxMessageBox(L"Update failed", L"Information", wxICON_ERROR | wxOK | wxCENTER);
+			wxLogError(wxString::Format(L"Application provider '%s' is not OK for checking updates", appProvider.GetName()));
+			return;
 		}
 
-		installButton->Enable(enableInstall);
+		DoInstall(appProvider);
 
-		ReadProviders(updProvider, appProviders);
 		CheckUpdates();
 	}
+}
+
+void UpdateDlg::OnInstallAllUpdates(wxCommandEvent& event)
+{
+	if(CheckForRestart()) return;
+
+	if(HasAppUpdates())
+	{
+		if(!CheckAppProvidersStatus())
+		{
+			wxLogError("Broken application provider, break updates installation");
+			return;
+		}
+
+		for(const AppInfoProvider &appProvider: appProviders)
+			DoInstall(appProvider);
+
+		CheckUpdates();
+	}
+}
+
+bool UpdateDlg::DoInstall(const AppInfoProvider &appProvider)
+{
+	DownloadDlg dlg(this, DOWNLOAD_DLG, &appProvider, L"Installing updates");
+	int res = dlg.ShowModal();
+
+	if(res == DownloadDlg::UPDATE_OK) wxMessageBox(L"Update(s) successfully installed", L"Information");
+	else if(res == DownloadDlg::UPDATE_CANCEL) wxMessageBox(L"Update canceled", L"Information", wxICON_WARNING | wxOK | wxCENTER);
+	else if(res == DownloadDlg::UPDATE_FAIL) wxMessageBox(L"Update failed", L"Information", wxICON_ERROR | wxOK | wxCENTER);
+
+	return res == DownloadDlg::UPDATE_OK;
 }
 
 void UpdateDlg::OnSettingsCheckBox(wxCommandEvent &event)

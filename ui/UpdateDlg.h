@@ -65,17 +65,21 @@ private:
 	void OnAutoCheckUpdates(wxCommandEvent &event);
 	void OnCheckThreadCompleted(CheckThreadEvent& event);
 	void OnCheckUpdates(wxCommandEvent& event);
-	void OnInstallUpdates(wxCommandEvent& event);
+	void OnInstallUpdate(wxCommandEvent& event);
+	void OnInstallAllUpdates(wxCommandEvent& event);
 	void OnUpdateTimer(wxTimerEvent &event);
 	void OnSettingsCheckBox(wxCommandEvent &event);
 	void OnSettingsSpinCtrl(wxSpinEvent& event);
 	void OnSettingsText(wxCommandEvent& event);
 
+	void OnUpdateListSelectionChanged(wxDataViewEvent& event);
+	
 	void EnableApplyButton(bool enable);
 	bool TestUpdateSettingsForChanges();
 	void SetupTimer();
 	void RestartTimer(unsigned int hours);
 	void CheckUpdates();
+	bool CheckForRestart();
 
 	void LoadSettings();
 	void LoadUpdateSettings(UpdateParams &params);
@@ -87,6 +91,10 @@ private:
 	void ApplyUpdateSettings(const UpdateParams &params);
 
 	bool CheckAppProvidersStatus() const;
+	bool HasAppUpdate(size_t index) const;
+	bool HasAppUpdates() const;
+
+	bool DoInstall(const AppInfoProvider &appProvider);
 
 	wxTimer *timer;
 	wxDateTime timerStartTime;
@@ -96,6 +104,7 @@ private:
 	wxStaticText *lastUpdLabel;
 	wxButton *updButton;
 	wxButton *installButton;
+	wxButton *installAllButton;
 	wxCheckBox *hideCheck;
 	wxCheckBox *notifyCheck;
 	wxCheckBox *autoCheck;
@@ -108,8 +117,7 @@ private:
 	UpdaterProvider updProvider;
 	std::vector<TargetAppProvider> appProviders;
 
-	bool ready_to_autoupdate;
-	bool ready_to_install;
+	std::vector<bool> readyToUpdate;
 
 	std::vector<wxString> columnsIds;
 };
